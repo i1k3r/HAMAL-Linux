@@ -7,6 +7,11 @@ HAMAL-Linux-bin
 *.exe
 *.test
 *.out
+*.snap
+.snap/
+parts/
+prime/
+stage/
 
 # IDEs
 .idea/

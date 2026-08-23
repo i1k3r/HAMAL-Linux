@@ -1,0 +1,86 @@
+name: hamal
+title: HAMAL
+version: "0.8.1"
+summary: Fast, private, temporary file transfer between devices
+description: |
+  HAMAL is a simple, privacy-focused file transfer application for sending files directly between devices through temporary transfer rooms.
+
+  Create a room on the desktop, scan the QR code with another device, and transfer files without uploading them to a permanent cloud storage service.
+
+  Features:
+  - Temporary transfer rooms
+  - QR-code based device joining
+  - Optional PIN protection
+  - File upload and download
+  - Download → Saved state
+  - File-type pixel-art indicators
+  - Executable file warnings
+  - Automatic room expiration
+  - Participant-controlled room closing
+  - Dark and light themes
+  - 20 languages
+  - Linux-native desktop application
+
+grade: stable
+confinement: strict
+base: core24
+license: MIT
+website: https://github.com/i1k3r/HAMAL-Linux
+issues: https://github.com/i1k3r/HAMAL-Linux/issues
+source-code: https://github.com/i1k3r/HAMAL-Linux
+contact: https://github.com/i1k3r/HAMAL-Linux
+
+apps:
+  hamal:
+    command: bin/desktop-launch $SNAP/usr/bin/HAMAL-Linux
+    plugs:
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - opengl
+      - gsettings
+      - network
+      - network-bind
+      - home
+      - removable-media
+    desktop: usr/share/applications/hamal.desktop
+    environment:
+      GSETTINGS_SCHEMA_DIR: $SNAP/usr/share/glib-2.0/schemas
+      XDG_DATA_DIRS: $SNAP/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}
+      XDG_CONFIG_DIRS: $SNAP/etc/xdg:${XDG_CONFIG_DIRS:-/etc/xdg}
+      LD_LIBRARY_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAP/usr/lib:$SNAP/lib/$SNAPCRAFT_ARCH_TRIPLET:$SNAP/lib:$LD_LIBRARY_PATH
+
+parts:
+  desktop-launch:
+    plugin: nil
+    override-build: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      echo '#!/bin/sh' > $SNAPCRAFT_PART_INSTALL/bin/desktop-launch
+      echo 'exec "$@"' >> $SNAPCRAFT_PART_INSTALL/bin/desktop-launch
+      chmod +x $SNAPCRAFT_PART_INSTALL/bin/desktop-launch
+
+  hamal:
+    after: [desktop-launch]
+    plugin: nil
+    source: .
+    stage-packages:
+      - libwebkit2gtk-4.1-0
+      - libgtk-3-0t64
+      - gsettings-desktop-schemas
+      - shared-mime-info
+      - ca-certificates
+    override-build: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/applications
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/scalable/apps
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/512x512/apps
+
+      # Install the verified Linux ELF binary
+      cp -f HAMAL-Linux $SNAPCRAFT_PART_INSTALL/usr/bin/HAMAL-Linux
+      chmod +x $SNAPCRAFT_PART_INSTALL/usr/bin/HAMAL-Linux
+
+      # Install desktop launcher entry and icon
+      cp -f snap/gui/hamal.desktop $SNAPCRAFT_PART_INSTALL/usr/share/applications/hamal.desktop
+      cp -f snap/gui/hamal.svg $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/scalable/apps/hamal.svg
+      cp -f snap/gui/hamal.png $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/512x512/apps/hamal.png
