@@ -55,6 +55,8 @@ export namespace main {
 	    participantUrl?: string;
 	    qrSvg?: string;
 	    expiresAt?: string;
+	    closeDeadline?: string;
+	    closingRemainingSeconds?: number;
 	    pinRequired: boolean;
 	    lanUrl?: string;
 	    localUrl?: string;
@@ -71,6 +73,8 @@ export namespace main {
 	        this.participantUrl = source["participantUrl"];
 	        this.qrSvg = source["qrSvg"];
 	        this.expiresAt = source["expiresAt"];
+	        this.closeDeadline = source["closeDeadline"];
+	        this.closingRemainingSeconds = source["closingRemainingSeconds"];
 	        this.pinRequired = source["pinRequired"];
 	        this.lanUrl = source["lanUrl"];
 	        this.localUrl = source["localUrl"];

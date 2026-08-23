@@ -188,7 +188,7 @@
                 </div>
 
                 <div class="qr-container">
-                    <div id="qr-box" class="qr-box">
+                    <div id="qr-box" class="qr-box" onclick="openQRLightbox()" role="button" tabindex="0" title="Click to enlarge">
                         <!-- SVG injected dynamically -->
                     </div>
                     <div class="qr-label-box">
@@ -333,9 +333,72 @@
                     <a href="mailto:hamalapp@outlook.com?subject=HAMAL%20Feedback" onclick="openFeedbackEmail(event)" class="about-email-link">hamalapp@outlook.com</a>
                 </p>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <button type="button" class="footer-link-btn" onclick="openResponsibleUseModalFromAbout()" style="font-size: 0.8rem; text-decoration: underline; padding: 0.25rem 0;" data-i18n="about.responsibleUse">Responsible Use / Legal</button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="closeAllModals()" data-i18n="about.closeBtn">Close</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Responsible Use Modal -->
+    <div id="modal-responsible-use" class="modal-dialog hidden" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div class="brand-wrapper">
+                <img src="/brand/hamal-logo-light.svg" alt="HAMAL" class="brand-logo logo-light">
+                <img src="/brand/hamal-logo-dark.svg" alt="HAMAL" class="brand-logo logo-dark">
+                <span class="header-tag" data-i18n="responsibleUse.tag">RESPONSIBLE USE</span>
+            </div>
+            <button type="button" id="responsible-use-close-x" class="modal-close-btn hidden" onclick="closeAllModals()" aria-label="Close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body responsible-use-body">
+            <h3 class="responsible-use-title" data-i18n="responsibleUse.title">Responsible Use</h3>
+            <div class="responsible-use-text-box">
+                <p class="responsible-use-p" data-i18n="responsibleUse.p1">HAMAL is a local network file transfer tool. Files are transferred by users between devices they control or are authorized to use.</p>
+                <p class="responsible-use-p" data-i18n="responsibleUse.p2">You are responsible for the files you transfer and for having the necessary rights and permissions to share them.</p>
+                <p class="responsible-use-p" data-i18n="responsibleUse.p3">Do not use HAMAL to transfer unlawful, unauthorized, copyright-infringing, or privacy-sensitive content without the required authorization.</p>
+                <p class="responsible-use-p highlight" data-i18n="responsibleUse.p4">By continuing, you acknowledge that you are responsible for your use of HAMAL and the content you transfer.</p>
+            </div>
+
+            <div id="responsible-use-ack-group" class="responsible-use-ack-group">
+                <label class="responsible-use-checkbox-label">
+                    <input type="checkbox" id="responsible-use-checkbox" onchange="onResponsibleUseCheckboxChange()">
+                    <span data-i18n="responsibleUse.checkbox">I have read and understand this notice.</span>
+                </label>
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" id="responsible-use-close-btn" class="btn btn-secondary btn-sm hidden" onclick="closeAllModals()" data-i18n="responsibleUse.closeBtn">Close</button>
+                <button type="button" id="responsible-use-continue-btn" class="btn btn-primary btn-sm" disabled onclick="acceptResponsibleUse()" data-i18n="responsibleUse.continueBtn">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Lightbox Modal -->
+    <div id="modal-qr" class="modal-dialog modal-dialog-qr hidden" onclick="event.stopPropagation()">
+        <div class="modal-header qr-modal-header">
+            <div class="badge-row">
+                <span class="badge badge-active">
+                    <span class="badge-dot"></span><span data-i18n="room.active">ROOM ACTIVE</span>
+                </span>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="closeAllModals()" aria-label="Close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body qr-lightbox-body">
+            <div id="qr-lightbox-box" class="qr-lightbox-box">
+                <!-- Enlarge cloned SVG here -->
+            </div>
+            <p class="qr-title" data-i18n="room.scanToJoin" style="margin-top: 1.25rem; font-size: 0.875rem;">SCAN TO JOIN</p>
+            <p class="qr-subtitle" data-i18n="room.scanSubtitle">Point camera on the same local network</p>
         </div>
     </div>
 </div>

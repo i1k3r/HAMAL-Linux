@@ -22,15 +22,17 @@ import (
 
 // HomeScreenState contains the current state of the home screen for the frontend.
 type HomeScreenState struct {
-	Status         string `json:"status"` // "starting", "setup", "ready", "closed", "stopped", "error"
-	ErrorMessage   string `json:"errorMessage,omitempty"`
-	RoomID         string `json:"roomId,omitempty"`
-	ParticipantURL string `json:"participantUrl,omitempty"`
-	QRSVG          string `json:"qrSvg,omitempty"`
-	ExpiresAt      string `json:"expiresAt,omitempty"`
-	PinRequired    bool   `json:"pinRequired"`
-	LanURL         string `json:"lanUrl,omitempty"`
-	LocalURL       string `json:"localUrl,omitempty"`
+	Status                  string `json:"status"` // "starting", "setup", "ready", "closing", "closed", "stopped", "error"
+	ErrorMessage            string `json:"errorMessage,omitempty"`
+	RoomID                  string `json:"roomId,omitempty"`
+	ParticipantURL          string `json:"participantUrl,omitempty"`
+	QRSVG                   string `json:"qrSvg,omitempty"`
+	ExpiresAt               string `json:"expiresAt,omitempty"`
+	CloseDeadline           string `json:"closeDeadline,omitempty"`
+	ClosingRemainingSeconds int    `json:"closingRemainingSeconds,omitempty"`
+	PinRequired             bool   `json:"pinRequired"`
+	LanURL                  string `json:"lanUrl,omitempty"`
+	LocalURL                string `json:"localUrl,omitempty"`
 }
 
 // ServerStatus contains low-level diagnostic information.
@@ -459,11 +461,25 @@ func (b *BackendController) checkNewFiles() {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
+		b.mu.Lock()
+		if b.homeState.Status == "ready" || b.homeState.Status == "closing" {
+			b.homeState.Status = "closed"
+			b.activeRoom = nil
+		}
+		b.mu.Unlock()
+		return
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return
 	}
 
 	var listData struct {
+		RoomID                  string `json:"room_id"`
+		Status                  string `json:"status"`
+		CloseDeadline           string `json:"close_deadline,omitempty"`
+		ClosingRemainingSeconds int    `json:"closing_remaining_seconds,omitempty"`
 		Files []struct {
 			FileID      string `json:"file_id"`
 			Filename    string `json:"filename"`
@@ -476,6 +492,17 @@ func (b *BackendController) checkNewFiles() {
 	if err := json.NewDecoder(resp.Body).Decode(&listData); err != nil {
 		return
 	}
+
+	b.mu.Lock()
+	if listData.Status == "closing" {
+		b.homeState.Status = "closing"
+		b.homeState.ClosingRemainingSeconds = listData.ClosingRemainingSeconds
+		b.homeState.CloseDeadline = listData.CloseDeadline
+	} else if listData.Status == "closed" {
+		b.homeState.Status = "closed"
+		b.activeRoom = nil
+	}
+	b.mu.Unlock()
 
 	for _, f := range listData.Files {
 		if f.Status != "ready" {

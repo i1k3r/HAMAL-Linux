@@ -1,45 +1,92 @@
-# HAMAL for Linux · Creator Dispatch
+# HAMAL-Linux
+
+**Linux-native desktop client for HAMAL.**
 
 <div align="center">
   <img src="frontend/src/brand/hamal-logo-light.svg#gh-light-mode-only" alt="HAMAL Logo Light" width="320">
   <img src="frontend/src/brand/hamal-logo-dark.svg#gh-dark-mode-only" alt="HAMAL Logo Dark" width="320">
   <br/><br/>
   <p><strong>Point-to-point, private, ephemeral local network file transfer for Linux desktops.</strong></p>
-  <p>Visual and functional twin of HAMAL-Windows powered by the Linux-native HAMAL engine.</p>
+  <p>Direct device-to-device sharing across Wi-Fi and LAN with zero cloud dependencies.</p>
 </div>
 
 ---
 
 ## Overview
 
-**HAMAL-Linux** brings the high-performance local network courier experience to Linux desktops with complete visual and interactive parity to HAMAL-Windows.
+**HAMAL-Linux** is the official desktop application for Linux systems powered by the Linux-native HAMAL engine. It allows you to create temporary transfer rooms on your local network, enabling phones, tablets, and computers to upload and download files at full wire speed without routing data through third-party servers.
 
-- **Zero Cloud**: Transfers stream directly over your local Wi-Fi / Ethernet at wire speed.
-- **Ephemeral Rooms**: Provision temporary rooms with configurable lifespan (5 minutes to 24 hours) and optional participant PIN codes.
-- **Auto-Expiring & Safe Purge**: All uploaded files and metadata are permanently removed upon expiration or when closed.
-- **Visual Clone of HAMAL-Windows**: Identical typography, dark/light themes, animations, creator dispatch cards, dropzone, and newest-first file management.
-- **Complete Localization**: Full support for all 20 locales with native RTL layout handling.
-- **Linux-Native Engine**: Directly integrates `github.com/i1k3r/HAMAL` and adheres to XDG directory specifications.
+### Core Features
+
+- **Point-to-Point Local Transfers**: Files stream directly across your local network (Wi-Fi or Ethernet) at gigabit speeds with zero cloud relay.
+- **No Cloud Storage**: Data exists solely in memory and local temporary storage on your machine during the transfer lifecycle.
+- **QR-Based Room Joining**: Participants simply scan a high-contrast QR code or open a local LAN URL to connect immediately without app installation.
+- **Temporary Rooms & Lifespans**: Provision rooms with customizable time-to-live (5 minutes up to 24 hours).
+- **Automatic Expiration & Purge**: When a room expires or is closed, all stored files, buffers, and metadata are permanently and securely deleted.
+- **Optional Participant PIN**: Protect transfers with an optional 4–8 character PIN code to prevent unauthorized access on shared networks.
+- **Participant Close Room**: Connected mobile clients can close the room directly from their phone when the exchange is finished.
+- **Server-Authoritative Room Closing**: Coordinated 10-second countdown lifecycle ensuring graceful termination and state synchronization across creator and participants.
+- **Visual File Type Icons & Warnings**: Pixel-art SVG file-type badges and safety indicators for potentially executable binaries.
+- **20-Language Localization**: Full native translations for English, Turkish, Chinese, Hindi, Spanish, French, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Marathi, Telugu, Dutch, Italian, Korean, and Polish (including RTL layout support).
+- **System Theme & Language Detection**: Automatically inherits your desktop's dark/light color scheme and system locale.
+- **Responsible Use Gate**: Integrated safety and regulatory acknowledgement for transparent, secure usage.
 
 ---
 
-## Architecture
+## Supported Platform & Architecture
 
-```
-HAMAL-Windows Frontend (Visual Source of Truth)
-                    │
-   ┌────────────────┴────────────────┐
-   │                                 │
-HAMAL-Windows                  HAMAL-Linux
-(Windows API Backend)          (Linux-Native HAMAL Engine)
+- **Operating System**: Linux (Ubuntu, Debian, Fedora, Arch Linux, openSUSE, etc.)
+- **Architecture**: **Linux x86-64 / AMD64**
+
+---
+
+## Installation & Quick Start
+
+### 1. Install Runtime Dependencies (Ubuntu / Debian)
+
+HAMAL-Linux requires GTK3 and WebKit2GTK 4.1:
+
+```bash
+sudo apt update
+sudo apt install -y libgtk-3-0 libwebkit2gtk-4.1-0
 ```
 
-- **Frontend**: Single-page desktop app built with modern HTML5, CSS custom properties, and JavaScript.
-- **Desktop Host**: [Wails v2](https://wails.io) bridging Go to the WebKitGTK webview.
-- **Engine**: In-process HAMAL backend listening on dynamic TCP port with automated LAN IP discovery, streaming multipart file pipes, and periodic cleanup workers.
-- **Storage**: Fully compliant with XDG Base Directory Specification:
-  - Data: `$XDG_DATA_HOME/HAMAL` (fallback: `~/.local/share/HAMAL`)
-  - Config: `$XDG_CONFIG_HOME/HAMAL` (fallback: `~/.config/HAMAL`)
+*For Fedora / RHEL:*
+```bash
+sudo dnf install gtk3 webkit2gtk4.1
+```
+
+*For Arch Linux:*
+```bash
+sudo pacman -S gtk3 webkit2gtk-4.1
+```
+
+### 2. Run the Application
+
+Download the release binary, grant execute permissions, and run:
+
+```bash
+chmod +x HAMAL-Linux
+./HAMAL-Linux
+```
+
+---
+
+## Desktop Integration (Optional)
+
+To integrate HAMAL into your desktop application launcher and system menus:
+
+```bash
+# Install binary system-wide
+sudo cp HAMAL-Linux /usr/local/bin/
+
+# Install desktop shortcut
+cp build/linux/hamal.desktop ~/.local/share/applications/
+
+# Install scalable icon
+mkdir -p ~/.local/share/icons/hicolor/scalable/apps/
+cp build/linux/hamal.svg ~/.local/share/icons/hicolor/scalable/apps/hamal.svg
+```
 
 ---
 
@@ -48,23 +95,21 @@ HAMAL-Windows                  HAMAL-Linux
 ### Prerequisites
 
 - **Go**: 1.23 or newer
-- **Wails CLI**: `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
-- **Linux Packages** (Ubuntu/Debian):
+- **Wails CLI v2**: `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+- **Build Packages (Ubuntu / Debian)**:
   ```bash
-  sudo apt install build-essential libgtk-3-dev libwebkit2gtk-4.0-dev
+  sudo apt install -y build-essential libgtk-3-dev libwebkit2gtk-4.1-dev pkg-config
   ```
 
 ### Build Command
 
-To build the native Linux binary:
+Compile using Wails with WebKitGTK 4.1 tags:
 
 ```bash
-# Using Wails
-wails build
-
-# Or using Go directly
-go build -v -o build/bin/HAMAL-Linux .
+CGO_ENABLED=1 wails build -tags webkit2_41 -s -o HAMAL-Linux
 ```
+
+The resulting executable will be located at `build/bin/HAMAL-Linux`.
 
 ### Running Tests
 
@@ -75,24 +120,20 @@ go vet ./...
 
 ---
 
-## Desktop Integration
+## Storage & XDG Compliance
 
-To integrate HAMAL into your Linux desktop application launcher:
+HAMAL-Linux strictly complies with the XDG Base Directory Specification:
+- **Data Directory**: `$XDG_DATA_HOME/HAMAL` (default: `~/.local/share/HAMAL`)
+- **Config Directory**: `$XDG_CONFIG_HOME/HAMAL` (default: `~/.config/HAMAL`)
 
-```bash
-# Copy binary
-sudo cp build/bin/HAMAL-Linux /usr/local/bin/
+---
 
-# Copy desktop file
-cp build/linux/hamal.desktop ~/.local/share/applications/
+## Responsible Use
 
-# Copy icon
-mkdir -p ~/.local/share/icons/hicolor/scalable/apps/
-cp build/linux/hamal.svg ~/.local/share/icons/hicolor/scalable/apps/hamal.svg
-```
+HAMAL is intended solely for lawful, authorized peer-to-peer data synchronization and local file delivery. Users are responsible for ensuring that shared content complies with applicable local laws and network usage policies.
 
 ---
 
 ## License
 
-[MIT License](LICENSE) © 2026 i1k3r
+Distributed under the [MIT License](LICENSE). © 2026 i1k3r

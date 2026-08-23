@@ -5,6 +5,63 @@ let dropResetTimeout = null;
 let expiresAtTimestamp = null;
 let countdownInterval = null;
 
+const FILE_PIXEL_ICONS = {
+    image: `<svg class="pixel-icon pixel-icon-image" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Image"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
+    video: `<svg class="pixel-icon pixel-icon-video" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Video"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`,
+    audio: `<svg class="pixel-icon pixel-icon-audio" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Audio"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`,
+    pdf: `<svg class="pixel-icon pixel-icon-pdf" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="PDF Document"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 15h2a1.5 1.5 0 0 0 0-3H9v6"></path><path d="M15 12h-2v6"></path></svg>`,
+    doc: `<svg class="pixel-icon pixel-icon-doc" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Document"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>`,
+    sheet: `<svg class="pixel-icon pixel-icon-sheet" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Spreadsheet"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M8 13h8M8 17h8M12 13v8"></path></svg>`,
+    presentation: `<svg class="pixel-icon pixel-icon-pres" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Presentation"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`,
+    archive: `<svg class="pixel-icon pixel-icon-archive" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Archive"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>`,
+    disk: `<svg class="pixel-icon pixel-icon-disk" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Disk Image"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>`,
+    code: `<svg class="pixel-icon pixel-icon-code" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Code"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`,
+    lib: `<svg class="pixel-icon pixel-icon-lib" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Library Component"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>`,
+    win_exe: `<svg class="pixel-icon pixel-icon-exe" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Windows Application"><rect x="3" y="3" width="18" height="18" rx="3" ry="3"></rect><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>`,
+    script: `<svg class="pixel-icon pixel-icon-script" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Script"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>`,
+    java: `<svg class="pixel-icon pixel-icon-java" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Java Package"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>`,
+    android: `<svg class="pixel-icon pixel-icon-android" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Android Package"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`,
+    linux: `<svg class="pixel-icon pixel-icon-linux" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Linux Application"><rect x="4" y="4" width="16" height="16" rx="2"></rect><circle cx="9" cy="9" r="1"></circle><circle cx="15" cy="9" r="1"></circle><path d="M8 15s1.5 2 4 2 4-2 4-2"></path></svg>`,
+    generic: `<svg class="pixel-icon pixel-icon-generic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="File"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`
+};
+
+function getFileCategory(filename) {
+    if (!filename) return "generic";
+    const lower = filename.toLowerCase();
+
+    if (lower.endsWith(".tar.gz") || lower.endsWith(".tar.bz2") || lower.endsWith(".tar.xz")) {
+        return "archive";
+    }
+
+    const parts = lower.split(".");
+    if (parts.length <= 1) return "generic";
+    const ext = parts.pop();
+
+    if (["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "tif", "svg", "ico"].includes(ext)) return "image";
+    if (["mp4", "mkv", "avi", "mov", "webm", "m4v", "wmv"].includes(ext)) return "video";
+    if (["mp3", "wav", "flac", "m4a", "aac", "ogg", "wma"].includes(ext)) return "audio";
+    if (ext === "pdf") return "pdf";
+    if (["doc", "docx", "odt", "rtf", "txt", "md"].includes(ext)) return "doc";
+    if (["xls", "xlsx", "csv", "ods"].includes(ext)) return "sheet";
+    if (["ppt", "pptx", "odp"].includes(ext)) return "presentation";
+    if (["zip", "rar", "7z", "tar", "gz", "bz2", "xz"].includes(ext)) return "archive";
+    if (["iso", "img"].includes(ext)) return "disk";
+    if (["exe", "msi", "com", "scr"].includes(ext)) return "win_exe";
+    if (["bat", "cmd", "vbs", "ps1", "sh"].includes(ext)) return "script";
+    if (ext === "jar") return "java";
+    if (["apk", "aab"].includes(ext)) return "android";
+    if (["appimage", "deb", "rpm"].includes(ext)) return "linux";
+    if (["dll", "so", "dylib"].includes(ext)) return "lib";
+    if (["html", "htm", "css", "js", "ts", "json", "xml", "go", "py", "java", "c", "cpp", "h", "hpp", "rs"].includes(ext)) return "code";
+
+    return "generic";
+}
+
+function getFileIconSVG(filename) {
+    const cat = getFileCategory(filename);
+    return FILE_PIXEL_ICONS[cat] || FILE_PIXEL_ICONS.generic;
+}
+
 const ICONS = {
     fileGeneric: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
@@ -121,7 +178,7 @@ function renderRoomFilesList() {
 
         const iconDiv = document.createElement("div");
         iconDiv.className = "file-type-icon";
-        iconDiv.innerHTML = ICONS.fileGeneric;
+        iconDiv.innerHTML = getFileIconSVG(file.filename);
 
         const infoDiv = document.createElement("div");
         infoDiv.className = "file-info";
@@ -446,12 +503,26 @@ function renderState(state) {
         if (viewClosed) viewClosed.classList.add("hidden");
         if (viewError) viewError.classList.add("hidden");
         if (viewSetup) viewSetup.classList.remove("hidden");
-    } else if (state.status === "ready") {
+    } else if (state.status === "ready" || state.status === "closing") {
         if (viewStarting) viewStarting.classList.add("hidden");
         if (viewSetup) viewSetup.classList.add("hidden");
         if (viewClosed) viewClosed.classList.add("hidden");
         if (viewError) viewError.classList.add("hidden");
         if (viewReady) viewReady.classList.remove("hidden");
+
+        const statusBadge = document.getElementById("status-badge");
+        if (state.status === "closing") {
+            if (statusBadge) {
+                statusBadge.className = "badge badge-closing";
+                const rem = state.closingRemainingSeconds || 10;
+                statusBadge.innerHTML = `<span class="badge-dot dot-closing"></span><span>${typeof t === "function" ? t("room.closing", { sec: rem }) : "ROOM CLOSING"} (${rem}s)</span>`;
+            }
+        } else {
+            if (statusBadge) {
+                statusBadge.className = "badge badge-active";
+                statusBadge.innerHTML = `<span class="badge-dot"></span><span data-i18n="room.active">${typeof t === "function" ? t("room.active") : "ROOM ACTIVE"}</span>`;
+            }
+        }
 
         if (qrBox && state.qrSvg) {
             qrBox.innerHTML = state.qrSvg;
@@ -461,7 +532,7 @@ function renderState(state) {
             urlInput.value = state.participantUrl;
         }
 
-        if (state.expiresAt) {
+        if (state.expiresAt && !expiresAtTimestamp) {
             expiresAtTimestamp = new Date(state.expiresAt).getTime();
             updateCountdown();
             if (!countdownInterval) {
@@ -509,7 +580,7 @@ function fetchHomeScreenState() {
         window.go.main.App.GetHomeScreenState()
             .then((state) => {
                 // If user is currently on the setup screen, do not let stale closed/stopped states override it
-                if (currentStatus === "setup" && state.status !== "ready") {
+                if (currentStatus === "setup" && state.status !== "ready" && state.status !== "closing") {
                     return;
                 }
                 renderState(state);
@@ -714,9 +785,17 @@ function initWailsDropListeners() {
 }
 
 if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initWailsDropListeners);
+    document.addEventListener("DOMContentLoaded", () => {
+        initWailsDropListeners();
+        if (!isResponsibleUseAcknowledged()) {
+            showResponsibleUseFirstLaunch();
+        }
+    });
 } else {
     initWailsDropListeners();
+    if (!isResponsibleUseAcknowledged()) {
+        showResponsibleUseFirstLaunch();
+    }
 }
 
 // Initial polling
@@ -729,7 +808,101 @@ const pollTimer = setInterval(() => {
     }
 }, 300);
 
-// Modal Management (Feedback & About)
+// Responsible Use Notice Management
+const RESPONSIBLE_USE_KEY = "hamal_responsible_use_acknowledged";
+
+function isResponsibleUseAcknowledged() {
+    try {
+        return localStorage.getItem(RESPONSIBLE_USE_KEY) === "true";
+    } catch (e) {
+        return false;
+    }
+}
+
+function showResponsibleUseFirstLaunch() {
+    const backdrop = document.getElementById("modal-backdrop");
+    const modalResp = document.getElementById("modal-responsible-use");
+    const closeX = document.getElementById("responsible-use-close-x");
+    const closeBtn = document.getElementById("responsible-use-close-btn");
+    const continueBtn = document.getElementById("responsible-use-continue-btn");
+    const ackGroup = document.getElementById("responsible-use-ack-group");
+    const checkbox = document.getElementById("responsible-use-checkbox");
+
+    if (closeX) closeX.classList.add("hidden");
+    if (closeBtn) closeBtn.classList.add("hidden");
+    if (continueBtn) {
+        continueBtn.classList.remove("hidden");
+        continueBtn.disabled = true;
+    }
+    if (ackGroup) ackGroup.classList.remove("hidden");
+    if (checkbox) checkbox.checked = false;
+
+    if (modalResp) modalResp.classList.remove("hidden");
+    if (backdrop) backdrop.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+}
+
+window.onResponsibleUseCheckboxChange = function () {
+    const checkbox = document.getElementById("responsible-use-checkbox");
+    const continueBtn = document.getElementById("responsible-use-continue-btn");
+    if (continueBtn) {
+        continueBtn.disabled = !(checkbox && checkbox.checked);
+    }
+};
+
+window.acceptResponsibleUse = function () {
+    try {
+        localStorage.setItem(RESPONSIBLE_USE_KEY, "true");
+    } catch (e) {}
+
+    window.closeAllModals();
+    fetchHomeScreenState();
+};
+
+window.openResponsibleUseModalFromAbout = function () {
+    const modalAbout = document.getElementById("modal-about");
+    const modalResp = document.getElementById("modal-responsible-use");
+    const closeX = document.getElementById("responsible-use-close-x");
+    const closeBtn = document.getElementById("responsible-use-close-btn");
+    const continueBtn = document.getElementById("responsible-use-continue-btn");
+    const ackGroup = document.getElementById("responsible-use-ack-group");
+
+    if (modalAbout) modalAbout.classList.add("hidden");
+
+    // In view-only mode from About: show close buttons, hide continue/checkbox
+    if (closeX) closeX.classList.remove("hidden");
+    if (closeBtn) closeBtn.classList.remove("hidden");
+    if (continueBtn) continueBtn.classList.add("hidden");
+    if (ackGroup) ackGroup.classList.add("hidden");
+
+    if (modalResp) modalResp.classList.remove("hidden");
+};
+
+// QR Lightbox Management
+window.openQRLightbox = function () {
+    const qrBox = document.getElementById("qr-box");
+    const lightboxBox = document.getElementById("qr-lightbox-box");
+    const modalQR = document.getElementById("modal-qr");
+    const backdrop = document.getElementById("modal-backdrop");
+
+    if (!qrBox || !lightboxBox || !modalQR || !backdrop) return;
+
+    const svg = qrBox.querySelector("svg");
+    if (!svg) return;
+
+    lightboxBox.innerHTML = svg.outerHTML;
+
+    const modalAbout = document.getElementById("modal-about");
+    const modalResp = document.getElementById("modal-responsible-use");
+    if (modalAbout) modalAbout.classList.add("hidden");
+    if (modalResp) modalResp.classList.add("hidden");
+
+    modalQR.classList.remove("hidden");
+    backdrop.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+};
+
+// Modal Management (Feedback, About, Responsible Use, QR Lightbox)
 window.openFeedbackModal = function () {
     const backdrop = document.getElementById("modal-backdrop");
     const modalFeedback = document.getElementById("modal-feedback");
@@ -750,8 +923,12 @@ window.openAboutModal = function () {
     const backdrop = document.getElementById("modal-backdrop");
     const modalFeedback = document.getElementById("modal-feedback");
     const modalAbout = document.getElementById("modal-about");
+    const modalResp = document.getElementById("modal-responsible-use");
+    const modalQR = document.getElementById("modal-qr");
 
     if (modalFeedback) modalFeedback.classList.add("hidden");
+    if (modalResp) modalResp.classList.add("hidden");
+    if (modalQR) modalQR.classList.add("hidden");
     if (modalAbout) modalAbout.classList.remove("hidden");
     if (backdrop) backdrop.classList.remove("hidden");
 };
@@ -760,13 +937,27 @@ window.closeAllModals = function (e) {
     if (e && e.target && e.target.id !== "modal-backdrop" && !e.target.classList.contains("modal-close-btn")) {
         return;
     }
+
+    // Do not dismiss backdrop on first launch before acceptance
+    if (!isResponsibleUseAcknowledged()) {
+        const modalResp = document.getElementById("modal-responsible-use");
+        if (modalResp && !modalResp.classList.contains("hidden")) {
+            return;
+        }
+    }
+
     const backdrop = document.getElementById("modal-backdrop");
     const modalFeedback = document.getElementById("modal-feedback");
     const modalAbout = document.getElementById("modal-about");
+    const modalResp = document.getElementById("modal-responsible-use");
+    const modalQR = document.getElementById("modal-qr");
 
     if (backdrop) backdrop.classList.add("hidden");
     if (modalFeedback) modalFeedback.classList.add("hidden");
     if (modalAbout) modalAbout.classList.add("hidden");
+    if (modalResp) modalResp.classList.add("hidden");
+    if (modalQR) modalQR.classList.add("hidden");
+    document.body.style.overflow = "";
 };
 
 window.submitFeedbackForm = function (e) {

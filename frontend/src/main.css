@@ -435,12 +435,21 @@ body {
   width: 200px;
   height: 200px;
   box-sizing: border-box;
+  cursor: pointer;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.qr-box:hover {
+  transform: scale(1.02);
+  border-color: var(--accent-amber);
+  box-shadow: 0 6px 24px rgba(217, 119, 6, 0.18);
 }
 
 .qr-box svg {
   display: block;
   width: 176px !important;
   height: 176px !important;
+  pointer-events: none;
 }
 
 .qr-label-box {
@@ -1846,6 +1855,112 @@ body {
   gap: 0.6rem;
   margin-top: 0.25rem;
 }
+
+/* --------------------------------------------------------------------------
+   QR Lightbox Modal
+   -------------------------------------------------------------------------- */
+.modal-dialog-qr {
+  max-width: 420px;
+}
+
+.qr-modal-header {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 1rem 1.25rem 0.75rem;
+}
+
+.qr-lightbox-body {
+  padding: 1.5rem 1.25rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-lightbox-box {
+  background: var(--qr-bg);
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--qr-border);
+  box-shadow: var(--shadow-qr);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  width: 320px;
+  height: 320px;
+  max-width: 82vw;
+  max-height: 82vw;
+  box-sizing: border-box;
+}
+
+.qr-lightbox-box svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* --------------------------------------------------------------------------
+   Responsible Use Modal
+   -------------------------------------------------------------------------- */
+.responsible-use-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.responsible-use-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.875rem;
+}
+
+.responsible-use-text-box {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.15rem;
+  margin-bottom: 1.15rem;
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.responsible-use-p {
+  margin-bottom: 0.75rem;
+}
+
+.responsible-use-p:last-child {
+  margin-bottom: 0;
+}
+
+.responsible-use-p.highlight {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.responsible-use-ack-group {
+  margin-bottom: 1.25rem;
+}
+
+.responsible-use-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.responsible-use-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-amber);
+  cursor: pointer;
+}
+
 
 
 

@@ -1,5 +1,6 @@
 # Binaries & Wails build output
 build/bin/
+build/windows/
 bin/
 HAMAL-Linux
 HAMAL-Linux-bin
