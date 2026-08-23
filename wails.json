@@ -1,0 +1,10 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "HAMAL-Linux",
+  "outputfilename": "HAMAL-Linux",
+  "wailsjsdir": "./frontend",
+  "author": {
+    "name": "HAMAL",
+    "email": "dev@hamal.local"
+  }
+}

@@ -1,0 +1,19 @@
+# Binaries & Wails build output
+build/bin/
+bin/
+HAMAL-Linux
+HAMAL-Linux-bin
+*.exe
+*.test
+*.out
+
+# IDEs
+.idea/
+.vscode/
+
+# Dependencies
+node_modules/
+
+# OS artifacts
+.DS_Store
+Thumbs.db

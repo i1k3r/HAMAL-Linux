@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=HAMAL
+Comment=Point-to-point private local file transfer
+GenericName=File Transfer
+Exec=HAMAL-Linux
+Icon=hamal
+Type=Application
+Categories=Network;FileTransfer;Utility;
+Terminal=false
+StartupWMClass=HAMAL-Linux
+Keywords=lan;drop;share;transfer;airdrop;p2p;local;courier;
