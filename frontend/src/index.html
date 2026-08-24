@@ -405,7 +405,27 @@
             <p class="qr-subtitle" data-i18n="room.scanSubtitle">Point camera on the same local network</p>
         </div>
     </div>
+
+    <!-- Close Room Confirmation Modal -->
+    <div id="modal-close-confirm" class="modal-dialog hidden" onclick="event.stopPropagation()">
+        <div class="modal-body" style="text-align: center; padding: 1.75rem 1.5rem;">
+            <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--accent-danger-glow, rgba(239, 68, 68, 0.15)); border: 1px solid var(--accent-danger-border, rgba(239, 68, 68, 0.3)); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.15rem; color: var(--accent-danger, #ef4444);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            </div>
+            <h3 class="card-title" data-i18n="room.confirmTitle" style="margin: 0 auto 0.5rem auto; font-size: 1.15rem; text-align: center; width: 100%;">Close this room?</h3>
+            <p class="card-subtitle" data-i18n="room.confirmDesc" style="margin-bottom: 1.5rem; font-size: 0.875rem; line-height: 1.45;">All files in this temporary room will be removed and connected participants will be disconnected.</p>
+            <div style="display: flex; gap: 0.75rem; justify-content: center;">
+                <button type="button" class="btn btn-secondary" onclick="closeAllModals()" data-i18n="room.cancelBtn" style="flex: 1;">Cancel</button>
+                <button type="button" id="confirm-close-btn" class="btn btn-danger" onclick="confirmCloseRoom()" data-i18n="room.confirmBtn" style="flex: 1;">Close Room</button>
+            </div>
+        </div>
+    </div>
 </div>
+
 
 <script src="/i18n.js"></script>
 <script src="/main.js"></script>

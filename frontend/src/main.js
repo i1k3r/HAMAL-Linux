@@ -57,7 +57,24 @@ function getFileCategory(filename) {
     return "generic";
 }
 
+function isPotentiallyExecutable(filename) {
+    if (!filename) return false;
+    const lower = filename.toLowerCase();
+    const parts = lower.split(".");
+    if (parts.length <= 1) return false;
+    const ext = parts.pop();
+
+    return [
+        "exe", "msi", "com", "scr", "bat", "cmd",
+        "ps1", "vbs", "sh",
+        "jar",
+        "apk", "aab",
+        "appimage", "deb", "rpm"
+    ].includes(ext);
+}
+
 function getFileIconSVG(filename) {
+
     const cat = getFileCategory(filename);
     return FILE_PIXEL_ICONS[cat] || FILE_PIXEL_ICONS.generic;
 }
@@ -207,9 +224,29 @@ function renderRoomFilesList() {
             sentBadge.innerText = typeof t === "function" ? t("files.sent") : "SENT";
             actionsDiv.appendChild(sentBadge);
         } else {
-            // Phone -> Windows file: Show Download or Saved button
+            // Phone -> Linux file: Show Executable Warning (if applicable) and Download/Saved button
+            if (isPotentiallyExecutable(file.filename)) {
+                const warnSpan = document.createElement("span");
+                warnSpan.className = "badge-exec-warning";
+                warnSpan.tabIndex = 0;
+                warnSpan.setAttribute("role", "tooltip");
+                const warnText = typeof t === "function" ? t("files.executableWarning") : "Potentially executable file. Only open or install files you trust.";
+                warnSpan.setAttribute("aria-label", warnText);
+                warnSpan.title = warnText;
+                warnSpan.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <span class="warning-tooltip">${warnText}</span>
+                `;
+                actionsDiv.appendChild(warnSpan);
+            }
+
             const btn = document.createElement("button");
             btn.id = `btn-download-${file.fileId}`;
+
 
             if (file.saved) {
                 btn.className = "btn btn-secondary btn-sm btn-saved";
@@ -311,6 +348,26 @@ window.copyParticipantUrl = function () {
 };
 
 window.closeRoom = function () {
+    window.openCloseConfirmModal();
+};
+
+window.openCloseConfirmModal = function () {
+    const backdrop = document.getElementById("modal-backdrop");
+    const modalCloseConfirm = document.getElementById("modal-close-confirm");
+    const modalAbout = document.getElementById("modal-about");
+    const modalResp = document.getElementById("modal-responsible-use");
+    const modalQR = document.getElementById("modal-qr");
+
+    if (modalAbout) modalAbout.classList.add("hidden");
+    if (modalResp) modalResp.classList.add("hidden");
+    if (modalQR) modalQR.classList.add("hidden");
+    if (modalCloseConfirm) modalCloseConfirm.classList.remove("hidden");
+    if (backdrop) backdrop.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+};
+
+window.confirmCloseRoom = function () {
+    window.closeAllModals();
     if (window.go && window.go.main && window.go.main.App) {
         window.go.main.App.CloseRoom()
             .then((state) => {
@@ -321,6 +378,7 @@ window.closeRoom = function () {
             });
     }
 };
+
 
 window.retryConnection = function () {
     const viewStarting = document.getElementById("view-starting");
@@ -951,13 +1009,16 @@ window.closeAllModals = function (e) {
     const modalAbout = document.getElementById("modal-about");
     const modalResp = document.getElementById("modal-responsible-use");
     const modalQR = document.getElementById("modal-qr");
+    const modalCloseConfirm = document.getElementById("modal-close-confirm");
 
     if (backdrop) backdrop.classList.add("hidden");
     if (modalFeedback) modalFeedback.classList.add("hidden");
     if (modalAbout) modalAbout.classList.add("hidden");
     if (modalResp) modalResp.classList.add("hidden");
     if (modalQR) modalQR.classList.add("hidden");
+    if (modalCloseConfirm) modalCloseConfirm.classList.add("hidden");
     document.body.style.overflow = "";
+
 };
 
 window.submitFeedbackForm = function (e) {

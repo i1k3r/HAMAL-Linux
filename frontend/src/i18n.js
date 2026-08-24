@@ -98,7 +98,12 @@ const TRANSLATIONS = {
         "update.downloading": "Downloading HAMAL {version}…",
         "update.installing": "Applying update and restarting…",
         "update.failed": "Update failed. Please try again.",
-        "update.retry": "Retry"
+        "update.retry": "Retry",
+        "files.executableWarning": "Potentially executable file. Only open or install files you trust.",
+        "room.confirmTitle": "Close this room?",
+        "room.confirmDesc": "All files in this temporary room will be removed and connected participants will be disconnected.",
+        "room.cancelBtn": "Cancel",
+        "room.confirmBtn": "Close Room",
     },
     tr: {
         "brand.tag": "OLUŞTURUCU DAĞITIM",
@@ -199,6 +204,11 @@ const TRANSLATIONS = {
         "update.installing": "Güncelleme uygulanıyor ve yeniden başlatılıyor…",
         "update.failed": "Güncelleme başarısız oldu. Lütfen tekrar deneyin.",
         "update.retry": "Yeniden Dene"
+        "files.executableWarning": "Potansiyel olarak çalıştırılabilir dosya. Yalnızca güvendiğiniz dosyaları açın veya yükleyin.",
+        "room.confirmTitle": "Bu oda kapatılsın mı?",
+        "room.confirmDesc": "Bu geçici odadaki tüm dosyalar silinecek ve bağlı katılımcıların bağlantısı kesilecektir.",
+        "room.cancelBtn": "İptal",
+        "room.confirmBtn": "Odayı Kapat",
     },
     "zh-CN": {
         "brand.tag": "创建者调度",
@@ -299,6 +309,11 @@ const TRANSLATIONS = {
         "update.installing": "正在应用更新并重启…",
         "update.failed": "更新失败，请重试。",
         "update.retry": "重试"
+        "files.executableWarning": "可能为可执行文件。请仅打开或安装您信任的文件。",
+        "room.confirmTitle": "确定关闭此房间？",
+        "room.confirmDesc": "此临时房间中的所有文件都将被删除，已连接的参与者将被断开连接。",
+        "room.cancelBtn": "取消",
+        "room.confirmBtn": "关闭房间",
     },
     hi: {
         "brand.tag": "निर्माता डिस्पैच",
@@ -399,6 +414,11 @@ const TRANSLATIONS = {
         "update.installing": "अपडेट लागू किया जा रहा है और पुनः प्रारंभ हो रहा है…",
         "update.failed": "अपडेट विफल रहा। कृपया पुन: प्रयास करें।",
         "update.retry": "पुनः प्रयास करें"
+        "files.executableWarning": "संभावित रूप से निष्पादन योग्य फ़ाइल। केवल उन्हीं फ़ाइलों को खोलें या इंस्टॉल करें जिन पर आप भरोसा करते हैं।",
+        "room.confirmTitle": "क्या आप यह कमरा बंद करना चाहते हैं?",
+        "room.confirmDesc": "इस अस्थायी कमरे की सभी फ़ाइलें हटा दी जाएंगी और जुड़े हुए प्रतिभागी डिस्कनेक्ट हो जाएंगे।",
+        "room.cancelBtn": "रद्द करें",
+        "room.confirmBtn": "कमरा बंद करें",
     },
     es: {
         "brand.tag": "DESPACHO DEL CREADOR",
@@ -499,6 +519,11 @@ const TRANSLATIONS = {
         "update.installing": "Aplicando actualización y reiniciando…",
         "update.failed": "La actualización falló. Inténtalo de nuevo.",
         "update.retry": "Reintentar"
+        "files.executableWarning": "Archivo potencialmente ejecutable. Solo abra o instale archivos de confianza.",
+        "room.confirmTitle": "¿Cerrar esta sala?",
+        "room.confirmDesc": "Se eliminarán todos los archivos de esta sala temporal y se desconectará a los participantes conectados.",
+        "room.cancelBtn": "Cancelar",
+        "room.confirmBtn": "Cerrar sala",
     },
     fr: {
         "brand.tag": "DISPATCH DU CRÉATEUR",
@@ -599,6 +624,11 @@ const TRANSLATIONS = {
         "update.installing": "Application de la mise à jour et redémarrage…",
         "update.failed": "Échec de la mise à jour. Veuillez réessayer.",
         "update.retry": "Réessayer"
+        "files.executableWarning": "Fichier potentiellement exécutable. N'ouvrez ou n'installez que des fichiers de confiance.",
+        "room.confirmTitle": "Fermer ce salon ?",
+        "room.confirmDesc": "Tous les fichiers de ce salon temporaire seront supprimés et les participants connectés seront déconnectés.",
+        "room.cancelBtn": "Annuler",
+        "room.confirmBtn": "Fermer le salon",
     },
     ar: {
         "brand.tag": "إرسال المنشئ",
@@ -699,6 +729,11 @@ const TRANSLATIONS = {
         "update.installing": "جارٍ تطبيق التحديث وإعادة التشغيل…",
         "update.failed": "فشل التحديث. يرجى إعادة المحاولة.",
         "update.retry": "إعادة المحاولة"
+        "files.executableWarning": "ملف قابل للتنفيذ المحتمل. افتح أو ثبّت فقط الملفات التي تثق بها.",
+        "room.confirmTitle": "هل تريد إغلاق هذه الغرفة؟",
+        "room.confirmDesc": "سيتم حذف جميع الملفات الموجودة في هذه الغرفة المؤقتة وفصل المشاركين المتصلين.",
+        "room.cancelBtn": "إلغاء",
+        "room.confirmBtn": "إغلاق الغرفة",
     },
     bn: {
         "brand.tag": "নির্মাতা প্রেরণ",
@@ -799,6 +834,11 @@ const TRANSLATIONS = {
         "update.installing": "আপডেট প্রয়োগ করা হচ্ছে এবং পুনরায় চালু হচ্ছে…",
         "update.failed": "আপডেট ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
         "update.retry": "পুনরায় চেষ্টা করুন"
+        "files.executableWarning": "সম্ভাব্য এক্সিকিউটেবল ফাইল। শুধুমাত্র আপনার বিশ্বস্ত ফাইল খুলুন বা ইনস্টল করুন।",
+        "room.confirmTitle": "এই রুমটি বন্ধ করবেন?",
+        "room.confirmDesc": "এই অস্থায়ী রুমের সমস্ত ফাইল মুছে ফেলা হবে এবং সংযুক্ত অংশগ্রহণকারীদের সংযোগ বিচ্ছিন্ন করা হবে।",
+        "room.cancelBtn": "বাতিল",
+        "room.confirmBtn": "রুম বন্ধ করুন",
     },
     pt: {
         "brand.tag": "DESPACHO DO CRIADOR",
@@ -899,6 +939,11 @@ const TRANSLATIONS = {
         "update.installing": "Aplicando atualização e reiniciando…",
         "update.failed": "Falha na atualização. Tente novamente.",
         "update.retry": "Tentar novamente"
+        "files.executableWarning": "Arquivo potencialmente executável. Apenas abra ou instale arquivos confiáveis.",
+        "room.confirmTitle": "Fechar esta sala?",
+        "room.confirmDesc": "Todos os arquivos desta sala temporária serão removidos e os participantes conectados serão desconectados.",
+        "room.cancelBtn": "Cancelar",
+        "room.confirmBtn": "Fechar sala",
     },
     ru: {
         "brand.tag": "ДИСПЕТЧЕР СОЗДАТЕЛЯ",
@@ -999,6 +1044,11 @@ const TRANSLATIONS = {
         "update.installing": "Применение обновления и перезапуск…",
         "update.failed": "Не удалось обновить. Попробуйте еще раз.",
         "update.retry": "Повторить"
+        "files.executableWarning": "Потенциально исполняемый файл. Открывайте и устанавливайте только файлы, которым доверяете.",
+        "room.confirmTitle": "Закрыть эту комнату?",
+        "room.confirmDesc": "Все файлы в этой временной комнате будут удалены, а подключенные участники отключены.",
+        "room.cancelBtn": "Отмена",
+        "room.confirmBtn": "Закрыть комнату",
     },
     ur: {
         "brand.tag": "تخلیق کار ترسیل",
@@ -1099,6 +1149,11 @@ const TRANSLATIONS = {
         "update.installing": "اپ ڈیٹ لاگو ہو رہا ہے اور دوبارہ شروع ہو رہا ہے…",
         "update.failed": "اپ ڈیٹ ناکام ہو گیا۔ براہ کرم دوبارہ کوشش کریں۔",
         "update.retry": "دوبارہ کوشش کریں"
+        "files.executableWarning": "ممکنہ طور پر قابل عمل فائل۔ صرف ان فائلوں کو کھولیں یا انسٹال کریں جن پر آپ کو بھروسہ ہو۔",
+        "room.confirmTitle": "کیا آپ یہ کمرہ بند کرنا چاہتے ہیں؟",
+        "room.confirmDesc": "اس عارضی کمرے میں موجود تمام فائلیں ہٹا دی جائیں گی اور منسلک شرکاء کا رابطہ منقطع ہو جائے گا۔",
+        "room.cancelBtn": "منسوخ",
+        "room.confirmBtn": "کمرہ بند کریں",
     },
     id: {
         "brand.tag": "DISPATCH PENGELOLA",
@@ -1199,6 +1254,11 @@ const TRANSLATIONS = {
         "update.installing": "Menerapkan pembaruan dan memulai ulang…",
         "update.failed": "Pembaruan gagal. Silakan coba lagi.",
         "update.retry": "Coba Lagi"
+        "files.executableWarning": "File yang berpotensi dapat dieksekusi. Hanya buka atau instal file yang Anda percayai.",
+        "room.confirmTitle": "Tutup ruangan ini?",
+        "room.confirmDesc": "Semua file di ruangan sementara ini akan dihapus dan peserta yang terhubung akan diputuskan sambungannya.",
+        "room.cancelBtn": "Batal",
+        "room.confirmBtn": "Tutup Ruangan",
     },
     de: {
         "brand.tag": "CREATOR-DISPATCH",
@@ -1299,6 +1359,11 @@ const TRANSLATIONS = {
         "update.installing": "Update wird angewendet und neu gestartet…",
         "update.failed": "Update fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "update.retry": "Wiederholen"
+        "files.executableWarning": "Potenziell ausführbare Datei. Öffnen oder installieren Sie nur Dateien, denen Sie vertrauen.",
+        "room.confirmTitle": "Diesen Raum schließen?",
+        "room.confirmDesc": "Alle Dateien in diesem temporären Raum werden entfernt und verbundene Teilnehmer getrennt.",
+        "room.cancelBtn": "Abbrechen",
+        "room.confirmBtn": "Raum schließen",
     },
     ja: {
         "brand.tag": "クリエイターディスパッチ",
@@ -1399,6 +1464,11 @@ const TRANSLATIONS = {
         "update.installing": "アップデートを適用して再起動中…",
         "update.failed": "アップデートに失敗しました。もう一度お試しください。",
         "update.retry": "再試行"
+        "files.executableWarning": "実行可能ファイルの可能性があります。信頼できるファイルのみを開くかインストールしてください。",
+        "room.confirmTitle": "このルームを閉じますか？",
+        "room.confirmDesc": "この一時ルーム内のすべてのファイルが削除され、接続中の参加者は切断されます。",
+        "room.cancelBtn": "キャンセル",
+        "room.confirmBtn": "ルームを閉じる",
     },
     mr: {
         "brand.tag": "निर्माता डिस्पॅच",
@@ -1499,6 +1569,11 @@ const TRANSLATIONS = {
         "update.installing": "अपडेट लागू करत आहे आणि रीस्टार्ट होत आहे…",
         "update.failed": "अपडेट अयशस्वी झाले. कृपया पुन्हा प्रयत्न करा.",
         "update.retry": "पुन्हा प्रयत्न करा"
+        "files.executableWarning": "संभाव्य एक्झिक्युटेबल फाइल. फक्त तुमच्या विश्वासू फाइल्स उघडा किंवा इन्स्टॉल करा.",
+        "room.confirmTitle": "ही रूम बंद करायची?",
+        "room.confirmDesc": "या तात्पुरत्या रूममधील सर्व फाइल्स काढून टाकल्या जातील आणि कनेक्ट केलेले सहभागी डिस्कनेक्ट केले जातील.",
+        "room.cancelBtn": "रद्द करा",
+        "room.confirmBtn": "ルーム बंद करा",
     },
     te: {
         "brand.tag": "క్రియేటర్ డిస్పాచ్",
@@ -1599,6 +1674,11 @@ const TRANSLATIONS = {
         "update.installing": "అప్‌డేట్ వర్తింపజేయబడుతోంది మరియు పునఃప్రారంభించబడుతోంది…",
         "update.failed": "అప్‌డేట్ విఫలమైంది. దయచేసి మళ్లీ ప్రయత్నించండి.",
         "update.retry": "మళ్లీ ప్రయత్నించండి"
+        "files.executableWarning": "సంభావ్య ఎక్జిక్యూటబుల్ ఫైల్. మీరు విశ్వసించే ఫైల్‌లను మాత్రమే తెరవండి లేదా ఇన్‌స్టాల్ చేయండి.",
+        "room.confirmTitle": "ఈ గదిని మూసివేయాలా?",
+        "room.confirmDesc": "ఈ తాత్కాలిక గదిలోని అన్ని ఫైల్‌లు తీసివేయబడతాయి మరియు కనెక్ట్ చేయబడిన పాల్గొనేవారు డిస్‌కనెక్ట్ చేయబడతారు.",
+        "room.cancelBtn": "రద్దు చేయి",
+        "room.confirmBtn": "గదిని మూసివేయి",
     },
     nl: {
         "brand.tag": "CREATOR-VERZENDING",
@@ -1699,6 +1779,11 @@ const TRANSLATIONS = {
         "update.installing": "Update toepassen en opnieuw opstarten…",
         "update.failed": "Update mislukt. Probeer het opnieuw.",
         "update.retry": "Opnieuw proberen"
+        "files.executableWarning": "Mogelijk uitvoerbaar bestand. Open of installeer alleen bestanden die u vertrouwt.",
+        "room.confirmTitle": "Deze kamer sluiten?",
+        "room.confirmDesc": "Alle bestanden in deze tijdelijke kamer worden verwijderd en verbonden deelnemers worden losgekoppeld.",
+        "room.cancelBtn": "Annuleren",
+        "room.confirmBtn": "Kamer sluiten",
     },
     it: {
         "brand.tag": "DISPACCIO CREATORE",
@@ -1799,6 +1884,11 @@ const TRANSLATIONS = {
         "update.installing": "Applicazione dell'aggiornamento e riavvio in corso…",
         "update.failed": "Aggiornamento non riuscito. Riprova.",
         "update.retry": "Riprova"
+        "files.executableWarning": "File potenzialmente eseguibile. Apri o installa solo i file di cui ti fidi.",
+        "room.confirmTitle": "Chiudere questa stanza?",
+        "room.confirmDesc": "Tutti i file in questa stanza temporanea verranno rimossi e i partecipanti connessi verranno disconnessi.",
+        "room.cancelBtn": "Annulla",
+        "room.confirmBtn": "Chiudi stanza",
     },
     ko: {
         "brand.tag": "크리에이터 발송",
@@ -1899,6 +1989,11 @@ const TRANSLATIONS = {
         "update.installing": "업데이트 적용 및 재시작 중…",
         "update.failed": "업데이트에 실패했습니다. 다시 시도해 주세요.",
         "update.retry": "다시 시도"
+        "files.executableWarning": "실행 가능한 파일일 수 있습니다. 신뢰할 수 있는 파일만 열거나 설치하십시오.",
+        "room.confirmTitle": "이 방을 닫으시겠습니까?",
+        "room.confirmDesc": "이 임시 방의 모든 파일이 삭제되고 연결된 참여자의 연결이 끊어집니다.",
+        "room.cancelBtn": "취소",
+        "room.confirmBtn": "방 닫기",
     },
     pl: {
         "brand.tag": "DYSPOZYCJA TWÓRCY",
@@ -1999,6 +2094,11 @@ const TRANSLATIONS = {
         "update.installing": "Stosowanie aktualizacji i ponowne uruchamianie…",
         "update.failed": "Aktualizacja nie powiodła się. Spróbuj ponownie.",
         "update.retry": "Ponów próbę"
+        "files.executableWarning": "Plik potencjalnie wykonywalny. Otwieraj lub instaluj wyłącznie pliki, którym ufasz.",
+        "room.confirmTitle": "Zamknąć ten pokój?",
+        "room.confirmDesc": "Wszystkie pliki w tym tymczasowym pokoju zostaną usunięte, a połączeni uczestnicy zostaną rozłączeni.",
+        "room.cancelBtn": "Anuluj",
+        "room.confirmBtn": "Zamknąć pokój",
     }
 };
 
