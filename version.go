@@ -8,7 +8,7 @@ import (
 )
 
 // AppVersion is the centralized authoritative application version for HAMAL-Linux.
-const AppVersion = "v0.8.1"
+const AppVersion = "v0.8.2"
 
 // SemVersion represents a parsed semantic version (Major.Minor.Patch).
 type SemVersion struct {

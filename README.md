@@ -1,13 +1,17 @@
-# HAMAL-Linux
-
-**Linux-native desktop client for HAMAL.**
-
 <div align="center">
-  <img src="frontend/src/brand/hamal-logo-light.svg#gh-light-mode-only" alt="HAMAL Logo Light" width="320">
-  <img src="frontend/src/brand/hamal-logo-dark.svg#gh-dark-mode-only" alt="HAMAL Logo Dark" width="320">
-  <br/><br/>
-  <p><strong>Point-to-point, private, ephemeral local network file transfer for Linux desktops.</strong></p>
-  <p>Direct device-to-device sharing across Wi-Fi and LAN with zero cloud dependencies.</p>
+
+<img src="frontend/src/brand/hamal-logo-light.svg#gh-light-mode-only" alt="HAMAL Logo Light" width="320" />
+<img src="frontend/src/brand/hamal-logo-dark.svg#gh-dark-mode-only" alt="HAMAL Logo Dark" width="320" />
+
+# HAMAL for Linux
+
+**Fast, private, temporary file transfer.**
+
+[![Platform](https://img.shields.io/badge/Platform-Linux%20x86--64-FCC624?logo=linux&logoColor=black)](https://github.com/i1k3r/HAMAL-Linux)
+[![Packaging](https://img.shields.io/badge/Snap%20Store-Available-E95420?logo=snapcraft&logoColor=white)](https://snapcraft.io/hamal)
+[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+
 </div>
 
 ---

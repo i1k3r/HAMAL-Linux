@@ -206,10 +206,10 @@ func TestFileSHA256Checksum(t *testing.T) {
 func TestAppVersionConstantIntegrity(t *testing.T) {
 	app := NewApp()
 	v := app.GetAppVersion()
-	if v != "v0.8.1" {
-		t.Fatalf("expected AppVersion constant 'v0.8.1', got %q", v)
+	if v != "v0.8.2" {
+		t.Fatalf("expected AppVersion constant 'v0.8.2', got %q", v)
 	}
-	if AppVersion != "v0.8.1" {
-		t.Fatalf("expected global AppVersion 'v0.8.1', got %q", AppVersion)
+	if AppVersion != "v0.8.2" {
+		t.Fatalf("expected global AppVersion 'v0.8.2', got %q", AppVersion)
 	}
 }
