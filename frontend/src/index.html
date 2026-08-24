@@ -1,433 +1,423 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light" dir="ltr">
+<html lang="en" data-theme="dark" dir="ltr">
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <meta name="theme-color" content="#141312" media="(prefers-color-scheme: dark)">
-    <meta name="theme-color" content="#F8F7F4" media="(prefers-color-scheme: light)">
-    <title>HAMAL · Creator Dispatch</title>
-    <link rel="icon" type="image/svg+xml" href="/brand/hamal-app-icon.svg">
-    <link rel="apple-touch-icon" href="/brand/hamal-app-icon.svg">
+    <meta name="theme-color" content="#0B0D0F" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F7F8FA" media="(prefers-color-scheme: light)">
+    <title>HAMAL · Fast, Private, Temporary File Transfer</title>
+    <link rel="icon" type="image/svg+xml" href="brand/hamal-app-icon.svg">
+    <link rel="apple-touch-icon" href="brand/hamal-app-icon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="/main.css" rel="stylesheet"/>
+    <link href="main.css" rel="stylesheet"/>
 </head>
 <body>
 <div class="app-container">
-    <!-- Header Navigation -->
-    <header class="header-nav">
-        <div class="brand-wrapper" title="HAMAL">
-            <img src="/brand/hamal-logo-light.svg" alt="HAMAL" class="brand-logo logo-light">
-            <img src="/brand/hamal-logo-dark.svg" alt="HAMAL" class="brand-logo logo-dark">
-            <span class="header-tag" data-i18n="brand.tag">CREATOR DISPATCH</span>
+    <!-- Persistent Left Navigation Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-brand" onclick="showRoomCreationScreen()" title="HAMAL">
+                <img src="brand/hamal-logo-light.svg" alt="HAMAL" class="sidebar-logo logo-light">
+                <img src="brand/hamal-logo-dark.svg" alt="HAMAL" class="sidebar-logo logo-dark">
+            </div>
+
+            <nav class="sidebar-nav">
+                <button type="button" id="nav-btn-room" class="nav-item active" onclick="switchNavTab('room')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    <span data-i18n="nav.transferRoom">Transfer Room</span>
+                </button>
+                <button type="button" id="nav-btn-files" class="nav-item" onclick="switchNavTab('files')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span data-i18n="nav.files">Files</span>
+                    <span id="nav-file-count" class="nav-pill">0</span>
+                </button>
+                <button type="button" id="nav-btn-about" class="nav-item" onclick="openAboutModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    <span data-i18n="nav.about">About</span>
+                </button>
+            </nav>
         </div>
-    </header>
 
-    <!-- Update Notification Banner (Subtle & Non-Blocking) -->
-    <div id="update-banner" class="update-banner hidden">
-        <div class="update-card card">
-            <div class="update-header">
-                <div class="update-title-wrap">
-                    <span class="update-icon">⚡</span>
-                    <h3 class="update-title" data-i18n="update.title">HAMAL Update Available</h3>
-                </div>
-                <button type="button" class="update-dismiss-btn" onclick="dismissUpdateBanner()" aria-label="Dismiss">✕</button>
+        <div class="sidebar-bottom">
+            <div class="lan-status-badge">
+                <span class="status-dot"></span>
+                <span data-i18n="lan.connected">LAN Connected</span>
             </div>
-            <div class="update-body">
-                <p id="update-version-text" class="update-msg" data-i18n="update.available">Version v0.8.1 is now available.</p>
-                <p id="update-current-text" class="update-subtext" data-i18n="update.current">You are currently using v0.8.0.</p>
-            </div>
-            <div id="update-progress-box" class="update-progress-box hidden">
-                <div class="update-progress-labels">
-                    <span id="update-progress-status" class="update-progress-status font-mono">Downloading HAMAL…</span>
-                    <span id="update-progress-percent" class="update-progress-percent font-mono">0%</span>
+
+            <div class="sidebar-controls">
+                <div class="theme-toggle-group">
+                    <button type="button" class="theme-btn" id="theme-btn-light" onclick="setUserTheme('light')" title="Light Theme" aria-label="Light theme">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="4.22" x2="19.78" y2="5.64"></line></svg>
+                    </button>
+                    <button type="button" class="theme-btn active" id="theme-btn-dark" onclick="setUserTheme('dark')" title="Dark Theme" aria-label="Dark theme">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    </button>
                 </div>
-                <div class="progress-bar-bg">
-                    <div id="update-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
-                </div>
-            </div>
-            <div id="update-error-box" class="error-msg hidden" style="margin-top: 0.5rem;"></div>
-            <div class="update-actions" id="update-actions-box">
-                <button type="button" id="update-later-btn" class="btn btn-secondary btn-sm" onclick="dismissUpdateBanner()" data-i18n="update.later">Later</button>
-                <button type="button" id="update-now-btn" class="btn btn-primary btn-sm" onclick="startUpdate()" data-i18n="update.updateNow">Update Now</button>
+                <span id="sidebar-version" class="version-text">v0.8.4</span>
             </div>
         </div>
-    </div>
+    </aside>
 
-    <!-- State: Starting -->
-    <div class="state-view" id="view-starting">
-        <div class="spinner"></div>
-        <p class="status-msg" data-i18n="status.starting">Initializing creator dispatch...</p>
-    </div>
-
-    <!-- State: Setup (Create Temporary Room & Hero) -->
-    <div class="state-view hidden" id="view-setup">
-        <div class="home-layout">
-            <!-- 1. Hero Section -->
-            <section class="hero-section">
-                <div class="hero-badge">
-                    <span class="badge-dot" style="background: var(--accent-amber);"></span>
-                    <span data-i18n="hero.badge">PRIVATE LOCAL NETWORK COURIER</span>
+    <!-- Main Dynamic Viewport -->
+    <main class="main-viewport">
+        <!-- Update Notification Banner (Subtle & Non-Blocking) -->
+        <div id="update-banner" class="update-banner hidden">
+            <div class="update-card">
+                <div class="update-header-row">
+                    <div class="update-title">
+                        <span>⚡</span>
+                        <span data-i18n="update.title">HAMAL Update Available</span>
+                    </div>
+                    <button type="button" class="modal-close-btn" onclick="dismissUpdateBanner()" aria-label="Dismiss">✕</button>
                 </div>
-                <h1 class="hero-title" data-i18n="hero.title">Point-to-point local file transfer.</h1>
-                <p class="hero-lead" data-i18n="hero.lead">
-                    Spin up an ephemeral transfer room on your local network. Share documents, media, and large packages directly between phones, tablets, and computers with zero cloud storage and automatic destruction.
-                </p>
-
-                <div class="hero-specs">
-                    <div class="spec-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                        <span data-i18n="hero.specLan">Full LAN Speed</span>
+                <p id="update-version-text" class="update-desc" data-i18n="update.available">Version v0.8.4 is now available.</p>
+                <div id="update-progress-box" class="upload-progress-box hidden">
+                    <div class="upload-progress-info">
+                        <span id="update-progress-status" class="font-mono">Downloading HAMAL…</span>
+                        <span id="update-progress-percent" class="font-mono">0%</span>
                     </div>
-                    <div class="spec-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                        <span data-i18n="hero.specTokens">Isolated Tokens</span>
-                    </div>
-                    <div class="spec-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                        <span data-i18n="hero.specExpiring">Auto-Expiring</span>
-                    </div>
-                    <div class="spec-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect></svg>
-                        <span data-i18n="hero.specQr">Instant QR Join</span>
+                    <div class="progress-track">
+                        <div id="update-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
                     </div>
                 </div>
-            </section>
+                <div id="update-error-box" class="form-hint" style="color: var(--accent-danger); display: none;"></div>
+                <div class="update-actions-row" id="update-actions-box">
+                    <button type="button" id="update-later-btn" class="btn btn-secondary btn-sm" onclick="dismissUpdateBanner()" data-i18n="update.later">Later</button>
+                    <button type="button" id="update-now-btn" class="btn btn-primary btn-sm" onclick="startUpdate()" data-i18n="update.updateNow">Update Now</button>
+                </div>
+            </div>
+        </div>
 
-            <!-- 2. Create Temporary Room Card -->
-            <section class="card creation-card">
-                <div class="creation-header">
-                    <div>
-                        <h2 class="card-title">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="creation-title-icon">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                            </svg>
+        <!-- 1. Starting State -->
+        <div class="state-view" id="view-starting" style="align-items: center; justify-content: center; gap: 16px;">
+            <div class="spinner"></div>
+            <p class="font-mono" style="font-size: 12px; color: var(--text-muted);" data-i18n="status.starting">Initializing creator dispatch...</p>
+        </div>
+
+        <!-- 2. Setup (Home / Create Room) View -->
+        <div class="state-view hidden" id="view-setup">
+            <div class="setup-container">
+                <!-- Hero Header -->
+                <section class="hero-box">
+                    <div class="hero-badge">
+                        <span class="status-dot" style="background: var(--accent-amber); box-shadow: 0 0 6px var(--accent-amber);"></span>
+                        <span data-i18n="hero.badge">PRIVATE LOCAL NETWORK COURIER</span>
+                    </div>
+                    <h1 class="hero-title" data-i18n="hero.title">Point-to-point local file transfer.</h1>
+                    <p class="hero-lead" data-i18n="hero.lead">
+                        Spin up an ephemeral transfer room on your local network. Share documents, media, and large packages directly between phones, tablets, and computers with zero cloud storage and automatic destruction.
+                    </p>
+                </section>
+
+                <!-- Create Room Instrument Panel -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                             <span data-i18n="create.title">Create Temporary Room</span>
                         </h2>
-                        <p class="card-subtitle" data-i18n="create.subtitle">Set lifespan and optional PIN code. A dispatch dashboard and QR code will be generated.</p>
+                        <p class="panel-subtitle" data-i18n="create.subtitle">Set lifespan and optional PIN code. A dispatch dashboard and QR code will be generated.</p>
                     </div>
-                </div>
 
-                <form id="create-room-form" class="creation-form" onsubmit="submitCreateRoomForm(event)">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="room-ttl-select" class="field-label" data-i18n="create.ttlLabel">ROOM LIFESPAN (TTL)</label>
-                            <select id="room-ttl-select" name="ttl_seconds" class="form-select">
-                                <option value="300" data-i18n="create.ttl5m">5 Minutes</option>
-                                <option value="900" data-i18n="create.ttl15m">15 Minutes</option>
-                                <option value="1800" data-i18n="create.ttl30m">30 Minutes</option>
-                                <option value="3600" selected data-i18n="create.ttl1h">1 Hour (Recommended)</option>
-                                <option value="21600" data-i18n="create.ttl6h">6 Hours</option>
-                                <option value="43200" data-i18n="create.ttl12h">12 Hours</option>
-                                <option value="86400" data-i18n="create.ttl24h">24 Hours (Maximum)</option>
-                            </select>
-                            <span class="field-hint" data-i18n="create.ttlHint">Room and all uploaded files will be permanently purged when expired.</span>
+                    <form id="create-room-form" onsubmit="submitCreateRoomForm(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="room-ttl-select" class="form-label" data-i18n="create.ttlLabel">ROOM LIFESPAN (TTL)</label>
+                                <select id="room-ttl-select" name="ttl_seconds" class="form-select">
+                                    <option value="300" data-i18n="create.ttl5m">5 Minutes</option>
+                                    <option value="900" data-i18n="create.ttl15m">15 Minutes</option>
+                                    <option value="1800" data-i18n="create.ttl30m">30 Minutes</option>
+                                    <option value="3600" selected data-i18n="create.ttl1h">1 Hour (Recommended)</option>
+                                    <option value="21600" data-i18n="create.ttl6h">6 Hours</option>
+                                    <option value="43200" data-i18n="create.ttl12h">12 Hours</option>
+                                    <option value="86400" data-i18n="create.ttl24h">24 Hours (Maximum)</option>
+                                </select>
+                                <span class="form-hint" data-i18n="create.ttlHint">Room and all uploaded files will be permanently purged when expired.</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="room-pin-input" class="form-label" data-i18n="create.pinLabel">PARTICIPANT PIN (OPTIONAL)</label>
+                                <input type="text" id="room-pin-input" name="pin" maxlength="8" data-i18n-placeholder="create.pinPlaceholder" placeholder="4–8 digits or characters" autocomplete="off" class="form-input font-mono">
+                                <span class="form-hint" data-i18n="create.pinHint">If specified, participants must enter this PIN before viewing or downloading files.</span>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="room-pin-input" class="field-label" data-i18n="create.pinLabel">PARTICIPANT PIN (OPTIONAL)</label>
-                            <input type="text" id="room-pin-input" name="pin" maxlength="8" data-i18n-placeholder="create.pinPlaceholder" placeholder="4–8 digits or characters" autocomplete="off" class="form-input">
-                            <span class="field-hint" data-i18n="create.pinHint">If specified, participants must enter this PIN before viewing or downloading files.</span>
+                        <div id="create-room-error" class="form-hint" style="color: var(--accent-danger); display: none; margin-bottom: 12px;"></div>
+
+                        <div class="form-actions">
+                            <button type="submit" id="create-submit-btn" class="btn btn-primary">
+                                <span data-i18n="create.submitBtn">Create Transfer Room</span>
+                                <span>→</span>
+                            </button>
                         </div>
+                    </form>
+                </section>
+
+                <!-- 6 Technical Specs / Feature Tiles -->
+                <section class="specs-grid">
+                    <div class="spec-tile">
+                        <div class="spec-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        </div>
+                        <div class="spec-title" data-i18n="hero.specLan">Full LAN Speed</div>
+                        <div class="spec-desc">Local network only</div>
                     </div>
-
-                    <div id="create-room-error" class="error-msg" style="display: none; margin-top: 0.5rem; margin-bottom: 0.75rem;"></div>
-
-                    <div class="form-actions">
-                        <button type="submit" id="create-submit-btn" class="btn btn-primary btn-create">
-                            <span data-i18n="create.submitBtn">Create Transfer Room</span>
-                            <span class="btn-arrow">→</span>
-                        </button>
+                    <div class="spec-tile">
+                        <div class="spec-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        </div>
+                        <div class="spec-title" data-i18n="hero.specTokens">Isolated Tokens</div>
+                        <div class="spec-desc">Your room, your rules</div>
                     </div>
-                </form>
-            </section>
-
-            <!-- 3. Three Feature Cards -->
-            <section class="workflow-grid">
-                <div class="workflow-card">
-                    <div class="step-num font-mono">01</div>
-                    <h3 class="workflow-title" data-i18n="workflow.step1Title">Dispatch Channel</h3>
-                    <p class="workflow-text" data-i18n="workflow.step1Text">Choose your room lifespan. A secure, isolated creator dashboard and participant link are provisioned on your local machine.</p>
-                </div>
-
-                <div class="workflow-card">
-                    <div class="step-num font-mono">02</div>
-                    <h3 class="workflow-title" data-i18n="workflow.step2Title">Scan to Connect</h3>
-                    <p class="workflow-text" data-i18n="workflow.step2Text">Connected devices on the same Wi-Fi or LAN simply scan the high-contrast QR code or open the participant link.</p>
-                </div>
-
-                <div class="workflow-card">
-                    <div class="step-num font-mono">03</div>
-                    <h3 class="workflow-title" data-i18n="workflow.step3Title">Direct Stream & Purge</h3>
-                    <p class="workflow-text" data-i18n="workflow.step3Text">Stream gigabyte-scale files at local wire speeds. When the room expires, memory and storage are completely reclaimed.</p>
-                </div>
-            </section>
+                    <div class="spec-tile">
+                        <div class="spec-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        </div>
+                        <div class="spec-title" data-i18n="hero.specExpiring">Auto-Expiring</div>
+                        <div class="spec-desc">Built-in TTL protection</div>
+                    </div>
+                    <div class="spec-tile">
+                        <div class="spec-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect></svg>
+                        </div>
+                        <div class="spec-title" data-i18n="hero.specQr">Instant QR Join</div>
+                        <div class="spec-desc">Scan and connect</div>
+                    </div>
+                    <div class="spec-tile">
+                        <div class="spec-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+                        </div>
+                        <div class="spec-title">No Cloud</div>
+                        <div class="spec-desc">No uploads, no trace</div>
+                    </div>
+                    <div class="spec-tile">
+                        <div class="spec-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </div>
+                        <div class="spec-title">Secure by Design</div>
+                        <div class="spec-desc">Private by default</div>
+                    </div>
+                </section>
+            </div>
         </div>
-    </div>
 
-    <!-- State: Room Ready (Creator Dashboard 2-Column Grid) -->
-    <div class="state-view hidden" id="view-ready">
-        <div class="creator-grid">
-            <!-- Left Column: Room Status & QR Dispatch -->
-            <aside class="dispatch-card card">
-                <div class="card-header">
+        <!-- 3. Active Transfer Room View -->
+        <div class="state-view hidden" id="view-ready">
+            <div class="active-room-layout">
+                <!-- Top Status & Metrics Bar -->
+                <header class="top-metrics-bar">
+                    <div id="status-badge" class="room-active-indicator">
+                        <span class="status-dot"></span>
+                        <span data-i18n="room.active">ROOM ACTIVE</span>
+                    </div>
+
+                    <div class="metrics-cluster">
+                        <div class="metric-tile">
+                            <span class="metric-value">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                <span id="metric-connected-count">0</span>
+                            </span>
+                            <span class="metric-label" data-i18n="stats.connected">CONNECTED</span>
+                        </div>
+                        <div class="metric-tile">
+                            <span class="metric-value metric-countdown" id="countdown">--:--</span>
+                            <span class="metric-label" data-i18n="stats.remaining">REMAINING</span>
+                        </div>
+                        <div class="metric-tile">
+                            <span class="metric-value" id="metric-transferred-size">0 B</span>
+                            <span class="metric-label" data-i18n="stats.transferred">TRANSFERRED</span>
+                        </div>
+                    </div>
+
                     <div>
-                        <h2 class="card-title" data-i18n="room.status">Room Status</h2>
+                        <button type="button" id="close-room-btn" class="btn btn-danger-outline btn-sm" onclick="closeRoom()" data-i18n="room.closeNow">Close Room</button>
                     </div>
-                    <div class="badge-row">
-                        <span id="status-badge" class="badge badge-active">
-                            <span class="badge-dot"></span><span data-i18n="room.active">ROOM ACTIVE</span>
-                        </span>
-                    </div>
-                </div>
+                </header>
 
-                <div class="room-status-box">
-                    <div class="status-label-group">
-                        <span class="status-caption" data-i18n="room.expiresIn">Expires in</span>
-                        <span id="countdown" class="countdown-timer">--:--</span>
-                    </div>
-                </div>
+                <!-- Central 2-Column Instrument Grid -->
+                <div class="instrument-grid">
+                    <!-- Left Column: Pairing QR + Dropzone -->
+                    <div class="column-left">
+                        <div class="dispatch-unified-panel">
+                            <!-- QR Dispatch Panel -->
+                            <div class="qr-panel">
+                                <span class="qr-title" data-i18n="room.scanToJoin">SCAN TO CONNECT</span>
 
-                <div class="qr-container">
-                    <div id="qr-box" class="qr-box" onclick="openQRLightbox()" role="button" tabindex="0" title="Click to enlarge">
-                        <!-- SVG injected dynamically -->
-                    </div>
-                    <div class="qr-label-box">
-                        <p class="qr-title" data-i18n="room.scanToJoin">SCAN TO JOIN</p>
-                        <p class="qr-subtitle" data-i18n="room.scanSubtitle">Point camera on the same local network</p>
-                    </div>
-                </div>
+                                <div id="qr-box" class="qr-box-wrapper" onclick="openQRLightbox()" role="button" tabindex="0" title="Click to enlarge">
+                                    <!-- Dynamic SVG inserted here -->
+                                </div>
 
-                <div class="link-group">
-                    <label for="participant-link-input" class="field-label" data-i18n="room.participantUrl">Participant URL</label>
-                    <div class="input-action-row">
-                        <input type="text" id="participant-link-input" value="" readonly spellcheck="false">
-                        <button type="button" id="copy-link-btn" class="btn btn-secondary btn-sm" onclick="copyParticipantUrl()" data-i18n="room.copy">Copy</button>
-                    </div>
-                    <span id="copy-toast" class="toast-msg" data-i18n="room.copied">✓ Copied to clipboard!</span>
-                </div>
+                                <div id="pin-display-box" class="pin-display-wrap" style="display: none;">
+                                    <span class="pin-caption">PIN</span>
+                                    <span id="room-pin-display" class="pin-value">----</span>
+                                </div>
 
-                <div class="card-divider"></div>
+                                <div class="address-row">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span class="address-label" data-i18n="room.participantUrl">ROOM ADDRESS</span>
+                                        <span id="copy-toast" class="toast-badge" data-i18n="room.copied">✓ Copied</span>
+                                    </div>
+                                    <div class="address-input-wrap">
+                                        <input type="text" id="participant-link-input" class="address-input" value="" readonly spellcheck="false">
+                                        <button type="button" id="copy-link-btn" class="btn-icon-copy" onclick="copyParticipantUrl()" title="Copy Link" aria-label="Copy Link">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
 
-                <div class="close-room-section">
-                    <button type="button" id="close-room-btn" class="btn btn-danger-restrained" onclick="closeRoom()" data-i18n="room.closeNow">Close Room Now</button>
-                </div>
-            </aside>
+                            <!-- Dropzone Upload Panel -->
+                            <div id="dropzone" class="dropzone-panel" onclick="openFilePicker()" style="--wails-drop-target: drop;">
+                                <div class="dropzone-icon" id="dropzone-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                </div>
+                                <span id="dropzone-title" class="dropzone-title" data-i18n="upload.title">UPLOAD FILES</span>
+                                <span id="dropzone-hint" class="dropzone-hint">Tap or drag files here</span>
 
-            <!-- Right Column: Dropzone & File Management -->
-            <section class="content-column">
-                <!-- Upload Dropzone Card -->
-                <div class="card">
-                    <div id="dropzone" class="dropzone" onclick="openFilePicker()" style="--wails-drop-target: drop;">
-                        <div class="dropzone-icon" id="dropzone-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
-                        </div>
-                        <p id="dropzone-title" class="dropzone-title" data-i18n="upload.title">Drag & drop files here</p>
-                        <p id="dropzone-hint" class="dropzone-hint">or <span class="browse-link" data-i18n="upload.browse">click to browse</span></p>
-                    </div>
-
-                    <div id="upload-progress-container" class="upload-progress-container" style="display: none;">
-                        <div class="progress-info">
-                            <span id="upload-filename" class="upload-filename" data-i18n="upload.uploading">Uploading file…</span>
-                            <span id="upload-percent" class="upload-percent">0%</span>
-                        </div>
-                        <div class="progress-bar-bg">
-                            <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
-                        </div>
-                        <div id="upload-error" class="error-msg" style="display: none;"></div>
-                    </div>
-                </div>
-
-                <!-- Room Files Card -->
-                <div class="card">
-                    <div class="files-header">
-                        <div class="files-title-group">
-                            <h3 class="files-title" data-i18n="files.title">Files in Room</h3>
-                            <span id="file-count" class="count-pill">0</span>
+                                <div id="upload-progress-container" class="upload-progress-box" style="display: none;">
+                                    <div class="upload-progress-info">
+                                        <span id="upload-filename">Uploading file…</span>
+                                        <span id="upload-percent">0%</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
+                                    </div>
+                                    <div id="upload-error" class="form-hint" style="color: var(--accent-danger); display: none;"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div id="file-list" class="file-list">
-                        <!-- File items dynamically rendered here -->
+                    <!-- Right Column: Participants + Activity + Files List -->
+                    <div class="column-right">
+                        <!-- Connected Participants -->
+                        <section class="section-group">
+                            <div class="section-header">
+                                <span class="section-title">
+                                    <span data-i18n="participants.title">CONNECTED PARTICIPANTS</span> (<span id="participant-count">0</span>)
+                                </span>
+                            </div>
+                            <div id="participant-list" class="participant-list">
+                                <!-- Dynamic Participant Rows -->
+                            </div>
+                        </section>
+
+                        <!-- Recent Activity -->
+                        <section class="section-group">
+                            <div class="section-header">
+                                <span class="section-title" data-i18n="activity.title">RECENT ACTIVITY</span>
+                            </div>
+                            <div id="activity-list" class="activity-list">
+                                <!-- Dynamic Activity Rows -->
+                            </div>
+                        </section>
+
+                        <!-- Room Files Section -->
+                        <section class="section-group">
+                            <div class="section-header">
+                                <span class="section-title">
+                                    <span data-i18n="files.title">FILES IN ROOM</span> (<span id="file-count">0</span>)
+                                </span>
+                            </div>
+                            <div id="file-list" class="file-list-container">
+                                <!-- Dynamic File Items -->
+                            </div>
+                        </section>
                     </div>
                 </div>
-            </section>
-        </div>
-    </div>
-
-    <!-- State: Closed / Inactive -->
-    <div class="state-view hidden" id="view-closed">
-        <section class="card card-inactive">
-            <div class="inactive-icon-wrapper">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
             </div>
-            <h2 class="inactive-title" data-i18n="inactive.title">Room Closed</h2>
-            <p class="inactive-message" data-i18n="inactive.message">This temporary transfer room has been closed.</p>
-            <div class="inactive-action-wrap">
-                <button type="button" class="btn btn-primary btn-create-new-room" onclick="showRoomCreationScreen()" data-i18n="inactive.create">Create New Room</button>
+        </div>
+
+        <!-- 4. Room Closed / Inactive State -->
+        <div class="state-view hidden" id="view-closed" style="align-items: center; justify-content: center; padding: 40px;">
+            <div class="panel" style="max-width: 440px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                <div class="close-modal-icon" style="color: var(--text-muted); background: var(--bg-elevated); border-color: var(--border-color);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                </div>
+                <h2 class="hero-title" style="font-size: 20px;" data-i18n="inactive.title">Room Closed</h2>
+                <p class="hero-lead" style="font-size: 13px;" data-i18n="inactive.message">This temporary transfer room has been closed and all files purged.</p>
+                <button type="button" class="btn btn-primary" onclick="showRoomCreationScreen()" style="margin-top: 8px;" data-i18n="inactive.create">Create New Room</button>
             </div>
-        </section>
-    </div>
+        </div>
 
-    <!-- State: Error -->
-    <div class="state-view hidden" id="view-error">
-        <div class="error-box">
-            <div class="error-icon">⚠️</div>
-            <div class="error-title" data-i18n="error.title">Unable to start HAMAL</div>
-            <div class="error-desc" id="error-message" data-i18n="error.desc">Failed to initialize backend.</div>
-            <button type="button" class="btn btn-primary" onclick="retryConnection()" style="margin-top: 0.75rem;" data-i18n="error.retry">Retry</button>
+        <!-- 5. Error State -->
+        <div class="state-view hidden" id="view-error" style="align-items: center; justify-content: center; padding: 40px;">
+            <div class="panel" style="max-width: 440px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                <div class="close-modal-icon">⚠️</div>
+                <h2 class="hero-title" style="font-size: 18px;" data-i18n="error.title">Unable to start HAMAL</h2>
+                <p class="hero-lead" id="error-message" style="font-size: 13px;" data-i18n="error.desc">Failed to initialize backend.</p>
+                <button type="button" class="btn btn-secondary" onclick="retryConnection()" data-i18n="error.retry">Retry</button>
+            </div>
         </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="app-footer">
-        <div class="footer-brand">
-            <span class="footer-title">HAMAL</span>
-            <span class="footer-tagline" data-i18n="footer.tagline">Basit. Hızlı. Size Özel.</span>
-        </div>
-        <div class="footer-center">
-            <span class="footer-heart">♡</span>
-            <span class="footer-prompt" data-i18n="footer.prompt">HAMAL'ı seviyor musunuz? Geri bildiriminiz bizim için değerli.</span>
-            <span class="footer-pipe">|</span>
-            <a href="mailto:hamalapp@outlook.com?subject=HAMAL%20Feedback" class="footer-link-btn footer-feedback-btn" onclick="openFeedbackEmail(event)">
-                <span class="footer-mail-icon">✉</span>
-                <span data-i18n="footer.feedback">Geri Bildirim Gönder</span>
-            </a>
-        </div>
-        <div class="footer-links">
-            <button type="button" class="footer-link-btn" onclick="openAboutModal()" data-i18n="footer.about">HAMAL Hakkında</button>
-        </div>
-    </footer>
+    </main>
 </div>
 
 <!-- Modal Backdrop & Dialogs -->
 <div id="modal-backdrop" class="modal-backdrop hidden" onclick="closeAllModals(event)">
-    <!-- About Modal -->
-    <div id="modal-about" class="modal-dialog hidden" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <div class="brand-wrapper">
-                <img src="/brand/hamal-logo-light.svg" alt="HAMAL" class="brand-logo logo-light">
-                <img src="/brand/hamal-logo-dark.svg" alt="HAMAL" class="brand-logo logo-dark">
+    <!-- Close Room Confirmation Modal -->
+    <div id="modal-close-confirm" class="modal-dialog hidden" onclick="event.stopPropagation()">
+        <div class="modal-body close-modal-content">
+            <div class="close-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
             </div>
-            <button type="button" class="modal-close-btn" onclick="closeAllModals()" aria-label="Close">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-        <div class="modal-body about-body">
-            <p class="about-tagline font-mono" data-i18n="about.tagline">Simple. Fast. Yours.</p>
-            <p class="about-desc" data-i18n="about.desc">HAMAL is a simple local file transfer tool designed to move files quickly between devices without unnecessary complexity.</p>
-            <div class="about-highlight-box">
-                <p class="about-thanks" data-i18n="about.thanks">Thank you for using HAMAL.</p>
-                <p class="about-feedback-contact">
-                    <span data-i18n="about.feedbackPrompt">Have a suggestion or found a bug? Email us at</span>
-                    <a href="mailto:hamalapp@outlook.com?subject=HAMAL%20Feedback" onclick="openFeedbackEmail(event)" class="about-email-link">hamalapp@outlook.com</a>
-                </p>
-            </div>
-            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <button type="button" class="footer-link-btn" onclick="openResponsibleUseModalFromAbout()" style="font-size: 0.8rem; text-decoration: underline; padding: 0.25rem 0;" data-i18n="about.responsibleUse">Responsible Use / Legal</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="closeAllModals()" data-i18n="about.closeBtn">Close</button>
+            <h3 class="close-modal-title" data-i18n="room.confirmTitle">Close this room?</h3>
+            <p class="close-modal-desc" data-i18n="room.confirmDesc">This will disconnect all participants and permanently delete the room and files.</p>
+            <div class="close-modal-actions">
+                <button type="button" id="confirm-close-btn" class="btn btn-danger" onclick="confirmCloseRoom()" data-i18n="room.confirmBtn">Yes, Close Room</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAllModals()" data-i18n="room.cancelBtn">Cancel</button>
             </div>
         </div>
     </div>
 
-    <!-- Responsible Use Modal -->
-    <div id="modal-responsible-use" class="modal-dialog hidden" onclick="event.stopPropagation()">
+    <!-- About Modal -->
+    <div id="modal-about" class="modal-dialog hidden" onclick="event.stopPropagation()">
         <div class="modal-header">
-            <div class="brand-wrapper">
-                <img src="/brand/hamal-logo-light.svg" alt="HAMAL" class="brand-logo logo-light">
-                <img src="/brand/hamal-logo-dark.svg" alt="HAMAL" class="brand-logo logo-dark">
-                <span class="header-tag" data-i18n="responsibleUse.tag">RESPONSIBLE USE</span>
+            <div class="sidebar-brand">
+                <img src="brand/hamal-logo-light.svg" alt="HAMAL" class="sidebar-logo logo-light" style="height: 20px;">
+                <img src="brand/hamal-logo-dark.svg" alt="HAMAL" class="sidebar-logo logo-dark" style="height: 20px;">
             </div>
-            <button type="button" id="responsible-use-close-x" class="modal-close-btn hidden" onclick="closeAllModals()" aria-label="Close">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
+            <button type="button" class="modal-close-btn" onclick="closeAllModals()" aria-label="Close">✕</button>
         </div>
-        <div class="modal-body responsible-use-body">
-            <h3 class="responsible-use-title" data-i18n="responsibleUse.title">Responsible Use</h3>
-            <div class="responsible-use-text-box">
-                <p class="responsible-use-p" data-i18n="responsibleUse.p1">HAMAL is a local network file transfer tool. Files are transferred by users between devices they control or are authorized to use.</p>
-                <p class="responsible-use-p" data-i18n="responsibleUse.p2">You are responsible for the files you transfer and for having the necessary rights and permissions to share them.</p>
-                <p class="responsible-use-p" data-i18n="responsibleUse.p3">Do not use HAMAL to transfer unlawful, unauthorized, copyright-infringing, or privacy-sensitive content without the required authorization.</p>
-                <p class="responsible-use-p highlight" data-i18n="responsibleUse.p4">By continuing, you acknowledge that you are responsible for your use of HAMAL and the content you transfer.</p>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="font-mono" style="font-size: 12px; color: var(--accent-amber);" data-i18n="about.tagline">FAST · PRIVATE · TEMPORARY · LOCAL</span>
+                <span id="about-app-version" class="font-mono" style="font-size: 11px; color: var(--text-muted);">v0.8.4</span>
             </div>
-
-            <div id="responsible-use-ack-group" class="responsible-use-ack-group">
-                <label class="responsible-use-checkbox-label">
-                    <input type="checkbox" id="responsible-use-checkbox" onchange="onResponsibleUseCheckboxChange()">
-                    <span data-i18n="responsibleUse.checkbox">I have read and understand this notice.</span>
-                </label>
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;" data-i18n="about.desc">
+                HAMAL is a quiet, precise digital courier designed to move files point-to-point on your local network without cloud storage, accounts, or telemetry.
+            </p>
+            <div style="background: var(--bg-elevated); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px;">
+                <p style="font-size: 12px; font-weight: 600; color: var(--text-primary);" data-i18n="about.thanks">Thank you for using HAMAL.</p>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                    <span data-i18n="about.feedbackPrompt">Have a suggestion or found a bug? Email us at</span>
+                    <a href="mailto:hamalapp@outlook.com?subject=HAMAL%20Feedback" onclick="openFeedbackEmail(event)" style="color: var(--accent-amber); text-decoration: none;">hamalapp@outlook.com</a>
+                </p>
             </div>
-
-            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                <button type="button" id="responsible-use-close-btn" class="btn btn-secondary btn-sm hidden" onclick="closeAllModals()" data-i18n="responsibleUse.closeBtn">Close</button>
-                <button type="button" id="responsible-use-continue-btn" class="btn btn-primary btn-sm" disabled onclick="acceptResponsibleUse()" data-i18n="responsibleUse.continueBtn">Continue</button>
+            <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeAllModals()" data-i18n="about.closeBtn">Close</button>
             </div>
         </div>
     </div>
 
     <!-- QR Lightbox Modal -->
     <div id="modal-qr" class="modal-dialog modal-dialog-qr hidden" onclick="event.stopPropagation()">
-        <div class="modal-header qr-modal-header">
-            <div class="badge-row">
-                <span class="badge badge-active">
-                    <span class="badge-dot"></span><span data-i18n="room.active">ROOM ACTIVE</span>
-                </span>
-            </div>
-            <button type="button" class="modal-close-btn" onclick="closeAllModals()" aria-label="Close">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
+        <div class="modal-header">
+            <span class="font-mono" style="font-size: 12px; font-weight: 700; color: var(--accent-success);" data-i18n="room.active">● ROOM ACTIVE</span>
+            <button type="button" class="modal-close-btn" onclick="closeAllModals()" aria-label="Close">✕</button>
         </div>
-        <div class="modal-body qr-lightbox-body">
-            <div id="qr-lightbox-box" class="qr-lightbox-box">
-                <!-- Enlarge cloned SVG here -->
+        <div class="qr-lightbox-body">
+            <div id="qr-lightbox-box" class="qr-lightbox-container">
+                <!-- SVG cloned here -->
             </div>
-            <p class="qr-title" data-i18n="room.scanToJoin" style="margin-top: 1.25rem; font-size: 0.875rem;">SCAN TO JOIN</p>
-            <p class="qr-subtitle" data-i18n="room.scanSubtitle">Point camera on the same local network</p>
-        </div>
-    </div>
-
-    <!-- Close Room Confirmation Modal -->
-    <div id="modal-close-confirm" class="modal-dialog hidden" onclick="event.stopPropagation()">
-        <div class="modal-body" style="text-align: center; padding: 1.75rem 1.5rem;">
-            <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--accent-danger-glow, rgba(239, 68, 68, 0.15)); border: 1px solid var(--accent-danger-border, rgba(239, 68, 68, 0.3)); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.15rem; color: var(--accent-danger, #ef4444);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                </svg>
-            </div>
-            <h3 class="card-title" data-i18n="room.confirmTitle" style="margin: 0 auto 0.5rem auto; font-size: 1.15rem; text-align: center; width: 100%;">Close this room?</h3>
-            <p class="card-subtitle" data-i18n="room.confirmDesc" style="margin-bottom: 1.5rem; font-size: 0.875rem; line-height: 1.45;">All files in this temporary room will be removed and connected participants will be disconnected.</p>
-            <div style="display: flex; gap: 0.75rem; justify-content: center;">
-                <button type="button" class="btn btn-secondary" onclick="closeAllModals()" data-i18n="room.cancelBtn" style="flex: 1;">Cancel</button>
-                <button type="button" id="confirm-close-btn" class="btn btn-danger" onclick="confirmCloseRoom()" data-i18n="room.confirmBtn" style="flex: 1;">Close Room</button>
-            </div>
+            <p class="font-mono" style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 14px;" data-i18n="room.scanToJoin">SCAN TO CONNECT</p>
+            <p style="font-size: 12px; color: var(--text-secondary);" data-i18n="room.scanSubtitle">Point camera on the same local network</p>
         </div>
     </div>
 </div>
 
-
-<script src="/i18n.js"></script>
-<script src="/main.js"></script>
+<script src="i18n.js"></script>
+<script src="main.js"></script>
 </body>
 </html>

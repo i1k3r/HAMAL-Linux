@@ -1,10 +1,15 @@
 let currentStatus = "starting";
 const roomFilesMap = new Map();
 let fileOrderCounter = 0;
+let totalTransferredBytes = 0;
 let dropResetTimeout = null;
 let expiresAtTimestamp = null;
 let countdownInterval = null;
+let currentRoomPin = "";
+const recentActivities = [];
+const connectedParticipantsMap = new Map();
 
+// Authentic HAMAL Pixel-Art File Type SVG Icons
 const FILE_PIXEL_ICONS = {
     image: `<svg class="pixel-icon pixel-icon-image" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Image"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
     video: `<svg class="pixel-icon pixel-icon-video" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Video"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>`,
@@ -22,7 +27,7 @@ const FILE_PIXEL_ICONS = {
     java: `<svg class="pixel-icon pixel-icon-java" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Java Package"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>`,
     android: `<svg class="pixel-icon pixel-icon-android" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Android Package"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`,
     linux: `<svg class="pixel-icon pixel-icon-linux" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Linux Application"><rect x="4" y="4" width="16" height="16" rx="2"></rect><circle cx="9" cy="9" r="1"></circle><circle cx="15" cy="9" r="1"></circle><path d="M8 15s1.5 2 4 2 4-2 4-2"></path></svg>`,
-    generic: `<svg class="pixel-icon pixel-icon-generic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="File"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`
+    generic: `<svg class="pixel-icon pixel-icon-generic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="File"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`
 };
 
 function getFileCategory(filename) {
@@ -74,47 +79,48 @@ function isPotentiallyExecutable(filename) {
 }
 
 function getFileIconSVG(filename) {
-
     const cat = getFileCategory(filename);
     return FILE_PIXEL_ICONS[cat] || FILE_PIXEL_ICONS.generic;
 }
 
-const ICONS = {
-    fileGeneric: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
-        <polyline points="14 2 14 8 20 8"></polyline>
-    </svg>`,
-    upload: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-        <polyline points="17 8 12 3 7 8"></polyline>
-        <line x1="12" y1="3" x2="12" y2="15"></line>
-    </svg>`,
-    checkCircle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-    </svg>`,
-    alertCircle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="12"></line>
-        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-    </svg>`
-};
-
-function getBrowseHintHtml() {
-    const browseText = typeof t === "function" ? t("upload.browse") : "click to browse";
-    return typeof t === "function" 
-        ? t("upload.hint", { browse: `<span class="browse-link">${browseText}</span>` })
-        : `or <span class="browse-link">${browseText}</span>`;
+function formatBytes(bytes) {
+    if (!bytes || bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
+// --------------------------------------------------------------------------
+// Navigation & Tab Management
+// --------------------------------------------------------------------------
+window.switchNavTab = function (tab) {
+    const btnRoom = document.getElementById("nav-btn-room");
+    const btnFiles = document.getElementById("nav-btn-files");
+
+    if (tab === "files") {
+        if (btnRoom) btnRoom.classList.remove("active");
+        if (btnFiles) btnFiles.classList.add("active");
+        const fileListEl = document.getElementById("file-list");
+        if (fileListEl) {
+            fileListEl.scrollIntoView({ behavior: "smooth" });
+        }
+    } else {
+        if (btnFiles) btnFiles.classList.remove("active");
+        if (btnRoom) btnRoom.classList.add("active");
+    }
+};
+
+// --------------------------------------------------------------------------
+// Dropzone State Management
+// --------------------------------------------------------------------------
 function resetDropZoneDefault() {
-    const defaultTitle = typeof t === "function" ? t("upload.title") : "Drag & drop files here";
-    setDropZoneState("", defaultTitle, getBrowseHintHtml());
+    const defaultTitle = typeof t === "function" ? t("upload.title") : "UPLOAD FILES";
+    setDropZoneState("", defaultTitle, "Tap or drag files here");
 }
 
 function setDropZoneState(state, title, hint, progress, filename) {
     const zone = document.getElementById("dropzone");
-    const iconElem = document.getElementById("dropzone-icon");
     const titleElem = document.getElementById("dropzone-title");
     const hintElem = document.getElementById("dropzone-hint");
     const progContainer = document.getElementById("upload-progress-container");
@@ -130,13 +136,13 @@ function setDropZoneState(state, title, hint, progress, filename) {
         dropResetTimeout = null;
     }
 
-    zone.className = "dropzone " + state;
+    zone.className = "dropzone-panel " + state;
     titleElem.innerText = title;
     hintElem.innerHTML = hint;
 
     if (state === "uploading") {
         const uploadingText = typeof t === "function" ? t("upload.uploading") : "Uploading file…";
-        if (progContainer) progContainer.style.display = "block";
+        if (progContainer) progContainer.style.display = "flex";
         if (progFilename) progFilename.innerText = filename || uploadingText;
         if (progPercent) progPercent.innerText = (progress || 0) + "%";
         if (progFill) progFill.style.width = (progress || 0) + "%";
@@ -145,86 +151,219 @@ function setDropZoneState(state, title, hint, progress, filename) {
         if (progContainer) progContainer.style.display = "none";
         if (progFill) progFill.style.width = "0%";
     }
-
-    if (state === "success") {
-        if (iconElem) iconElem.innerHTML = ICONS.checkCircle;
-    } else if (state === "error") {
-        if (iconElem) iconElem.innerHTML = ICONS.alertCircle;
-    } else {
-        if (iconElem) iconElem.innerHTML = ICONS.upload;
-    }
 }
 
-function renderRoomFilesList() {
-    const list = document.getElementById("file-list");
-    const countBadge = document.getElementById("file-count");
+// --------------------------------------------------------------------------
+// Activity Stream & Participants
+// --------------------------------------------------------------------------
+function addRecentActivity(type, filename, subtext) {
+    recentActivities.unshift({
+        type, // "upload" or "download"
+        filename,
+        subtext,
+        time: "Just now",
+        timestamp: Date.now()
+    });
+
+    if (recentActivities.length > 8) {
+        recentActivities.pop();
+    }
+    renderActivityList();
+}
+
+function renderActivityList() {
+    const activityList = document.getElementById("activity-list");
+    if (!activityList) return;
+
+    if (recentActivities.length === 0) {
+        const emptyText = typeof t === "function" ? t("activity.empty") : "No transfer activity yet";
+        activityList.innerHTML = `
+            <div style="padding: 12px; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); text-align: center;">
+                ${emptyText}
+            </div>
+        `;
+        return;
+    }
+
+    activityList.innerHTML = "";
+    recentActivities.forEach((act) => {
+        const row = document.createElement("div");
+        row.className = "activity-row";
+
+        const mainDiv = document.createElement("div");
+        mainDiv.className = "activity-main";
+
+        const iconDiv = document.createElement("div");
+        iconDiv.className = `activity-direction-icon ${act.type}`;
+        if (act.type === "download") {
+            iconDiv.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>`;
+        } else {
+            iconDiv.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
+        }
+
+        const metaDiv = document.createElement("div");
+        metaDiv.className = "activity-meta";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "activity-filename";
+        nameSpan.innerText = act.filename;
+
+        const subSpan = document.createElement("span");
+        subSpan.className = "activity-subtext";
+        subSpan.innerText = act.subtext;
+
+        metaDiv.appendChild(nameSpan);
+        metaDiv.appendChild(subSpan);
+        mainDiv.appendChild(iconDiv);
+        mainDiv.appendChild(metaDiv);
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "activity-time";
+        timeSpan.innerText = act.time;
+
+        row.appendChild(mainDiv);
+        row.appendChild(timeSpan);
+        activityList.appendChild(row);
+    });
+}
+
+function registerParticipant(name, ip) {
+    if (!name) name = "Mobile Device";
+    connectedParticipantsMap.set(ip || name, {
+        name,
+        ip: ip || "LAN Peer",
+        status: "Active",
+        lastSeen: Date.now()
+    });
+    renderParticipantList();
+}
+
+function renderParticipantList() {
+    const list = document.getElementById("participant-list");
+    const countBadge = document.getElementById("participant-count");
+    const metricCount = document.getElementById("metric-connected-count");
     if (!list) return;
 
-    const count = roomFilesMap.size;
+    const count = connectedParticipantsMap.size;
     if (countBadge) countBadge.innerText = String(count);
+    if (metricCount) metricCount.innerText = String(count);
 
     if (count === 0) {
-        const emptyTitle = typeof t === "function" ? t("files.emptyTitle") : "No files uploaded yet";
-        const emptyText = typeof t === "function" ? t("files.emptyText") : "Drop parcels above or browse from your device. Connected participants will receive files in real time.";
         list.innerHTML = `
-            <div id="no-files-msg" class="empty-state">
-                <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                </svg>
-                <p class="empty-state-title">${emptyTitle}</p>
-                <p class="empty-state-text">${emptyText}</p>
+            <div style="padding: 12px; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); text-align: center;">
+                Waiting for devices to scan and connect…
             </div>
         `;
         return;
     }
 
     list.innerHTML = "";
+    connectedParticipantsMap.forEach((p) => {
+        const row = document.createElement("div");
+        row.className = "participant-row";
 
-    // Sort newest first by order descending
+        const infoDiv = document.createElement("div");
+        infoDiv.className = "participant-info";
+
+        const iconDiv = document.createElement("div");
+        iconDiv.className = "participant-icon";
+        iconDiv.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`;
+
+        const detailsDiv = document.createElement("div");
+        detailsDiv.className = "participant-details";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "participant-name";
+        nameSpan.innerText = p.name;
+
+        const ipSpan = document.createElement("span");
+        ipSpan.className = "participant-ip";
+        ipSpan.innerText = p.ip;
+
+        detailsDiv.appendChild(nameSpan);
+        detailsDiv.appendChild(ipSpan);
+        infoDiv.appendChild(iconDiv);
+        infoDiv.appendChild(detailsDiv);
+
+        const statusSpan = document.createElement("span");
+        statusSpan.className = "participant-status";
+        statusSpan.innerHTML = `<span class="status-dot"></span> Active`;
+
+        row.appendChild(infoDiv);
+        row.appendChild(statusSpan);
+        list.appendChild(row);
+    });
+}
+
+// --------------------------------------------------------------------------
+// File List Rendering (with Dieter Rams Pixel-Art Icons & Empty State)
+// --------------------------------------------------------------------------
+function renderRoomFilesList() {
+    const list = document.getElementById("file-list");
+    const countBadge = document.getElementById("file-count");
+    const navFileCount = document.getElementById("nav-file-count");
+    if (!list) return;
+
+    const count = roomFilesMap.size;
+    if (countBadge) countBadge.innerText = String(count);
+    if (navFileCount) navFileCount.innerText = String(count);
+
+    if (count === 0) {
+        const emptyTitle = typeof t === "function" ? t("files.emptyTitle") : "No files uploaded yet";
+        const emptyText = typeof t === "function" ? t("files.emptyText") : "Drop parcels above or browse from your device. Connected participants will receive files in real time.";
+        list.innerHTML = `
+            <div id="no-files-msg" class="empty-state-box">
+                <div class="file-icon-box" style="color: var(--text-muted);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                </div>
+                <p class="empty-state-title">${emptyTitle}</p>
+                <p class="empty-state-lead">${emptyText}</p>
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = "";
     const files = Array.from(roomFilesMap.values()).sort((a, b) => b.order - a.order);
 
     files.forEach((file) => {
-        const item = document.createElement("div");
-        item.className = "file-item";
-        item.dataset.fileId = file.fileId;
+        const row = document.createElement("div");
+        row.className = "file-row";
+        row.dataset.fileId = file.fileId;
 
         const mainDiv = document.createElement("div");
-        mainDiv.className = "file-item-main";
+        mainDiv.className = "file-main";
 
         const iconDiv = document.createElement("div");
-        iconDiv.className = "file-type-icon";
+        iconDiv.className = "file-icon-box";
         iconDiv.innerHTML = getFileIconSVG(file.filename);
 
-        const infoDiv = document.createElement("div");
-        infoDiv.className = "file-info";
+        const textCol = document.createElement("div");
+        textCol.className = "file-text-col";
 
-        const nameSpan = document.createElement("span");
-        nameSpan.className = "file-name";
-        nameSpan.title = file.filename;
-        nameSpan.innerText = file.filename;
+        const titleSpan = document.createElement("span");
+        titleSpan.className = "file-title";
+        titleSpan.title = file.filename;
+        titleSpan.innerText = file.filename;
 
-        const metaSpan = document.createElement("span");
-        metaSpan.className = "file-meta font-mono";
-        metaSpan.innerText = file.sizeFormatted || "";
+        const specsSpan = document.createElement("span");
+        specsSpan.className = "file-specs font-mono";
+        specsSpan.innerText = file.sizeFormatted || "";
 
-        infoDiv.appendChild(nameSpan);
-        infoDiv.appendChild(metaSpan);
+        textCol.appendChild(titleSpan);
+        textCol.appendChild(specsSpan);
         mainDiv.appendChild(iconDiv);
-        mainDiv.appendChild(infoDiv);
+        mainDiv.appendChild(textCol);
 
         const actionsDiv = document.createElement("div");
         actionsDiv.className = "file-actions";
 
         if (file.direction === "outbound") {
-            // Windows -> Phone file: Show non-downloadable SENT badge
             const sentBadge = document.createElement("span");
             sentBadge.className = "badge-sent font-mono";
             sentBadge.innerText = typeof t === "function" ? t("files.sent") : "SENT";
             actionsDiv.appendChild(sentBadge);
         } else {
-            // Phone -> Linux file: Show Executable Warning (if applicable) and Download/Saved button
             if (isPotentiallyExecutable(file.filename)) {
                 const warnSpan = document.createElement("span");
                 warnSpan.className = "badge-exec-warning";
@@ -234,7 +373,7 @@ function renderRoomFilesList() {
                 warnSpan.setAttribute("aria-label", warnText);
                 warnSpan.title = warnText;
                 warnSpan.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
@@ -246,7 +385,6 @@ function renderRoomFilesList() {
 
             const btn = document.createElement("button");
             btn.id = `btn-download-${file.fileId}`;
-
 
             if (file.saved) {
                 btn.className = "btn btn-secondary btn-sm btn-saved";
@@ -265,9 +403,9 @@ function renderRoomFilesList() {
             actionsDiv.appendChild(btn);
         }
 
-        item.appendChild(mainDiv);
-        item.appendChild(actionsDiv);
-        list.appendChild(item);
+        row.appendChild(mainDiv);
+        row.appendChild(actionsDiv);
+        list.appendChild(row);
     });
 }
 
@@ -297,7 +435,6 @@ window.downloadFile = function (fileId, filename) {
                     }
                     console.error("Save failed:", res.errorMessage);
                 } else {
-                    // Cancelled dialog - restore saved status
                     renderRoomFilesList();
                 }
             })
@@ -355,15 +492,65 @@ window.openCloseConfirmModal = function () {
     const backdrop = document.getElementById("modal-backdrop");
     const modalCloseConfirm = document.getElementById("modal-close-confirm");
     const modalAbout = document.getElementById("modal-about");
-    const modalResp = document.getElementById("modal-responsible-use");
     const modalQR = document.getElementById("modal-qr");
 
     if (modalAbout) modalAbout.classList.add("hidden");
-    if (modalResp) modalResp.classList.add("hidden");
     if (modalQR) modalQR.classList.add("hidden");
     if (modalCloseConfirm) modalCloseConfirm.classList.remove("hidden");
     if (backdrop) backdrop.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
+};
+
+window.openAboutModal = function () {
+    const backdrop = document.getElementById("modal-backdrop");
+    const modalAbout = document.getElementById("modal-about");
+    const modalCloseConfirm = document.getElementById("modal-close-confirm");
+    const modalQR = document.getElementById("modal-qr");
+
+    if (modalCloseConfirm) modalCloseConfirm.classList.add("hidden");
+    if (modalQR) modalQR.classList.add("hidden");
+    if (modalAbout) modalAbout.classList.remove("hidden");
+    if (backdrop) backdrop.classList.remove("hidden");
+};
+
+window.openQRLightbox = function () {
+    const qrBox = document.getElementById("qr-box");
+    const lightboxBox = document.getElementById("qr-lightbox-box");
+    const backdrop = document.getElementById("modal-backdrop");
+    const modalQR = document.getElementById("modal-qr");
+    const modalAbout = document.getElementById("modal-about");
+    const modalCloseConfirm = document.getElementById("modal-close-confirm");
+
+    if (qrBox && lightboxBox) {
+        lightboxBox.innerHTML = qrBox.innerHTML;
+    }
+    if (modalCloseConfirm) modalCloseConfirm.classList.add("hidden");
+    if (modalAbout) modalAbout.classList.add("hidden");
+    if (modalQR) modalQR.classList.remove("hidden");
+    if (backdrop) backdrop.classList.remove("hidden");
+};
+
+window.closeAllModals = function (e) {
+    if (e && e.target && e.target.id !== "modal-backdrop" && !e.target.classList.contains("modal-close-btn") && !e.target.closest(".modal-close-btn")) {
+        return;
+    }
+    const backdrop = document.getElementById("modal-backdrop");
+    const modalCloseConfirm = document.getElementById("modal-close-confirm");
+    const modalAbout = document.getElementById("modal-about");
+    const modalQR = document.getElementById("modal-qr");
+
+    if (backdrop) backdrop.classList.add("hidden");
+    if (modalCloseConfirm) modalCloseConfirm.classList.add("hidden");
+    if (modalAbout) modalAbout.classList.add("hidden");
+    if (modalQR) modalQR.classList.add("hidden");
+};
+
+window.openFeedbackEmail = function (e) {
+    if (e) e.preventDefault();
+    if (window.go && window.go.main && window.go.main.App && typeof window.go.main.App.OpenFeedbackEmail === "function") {
+        window.go.main.App.OpenFeedbackEmail();
+    } else {
+        window.location.href = "mailto:hamalapp@outlook.com?subject=HAMAL%20Feedback";
+    }
 };
 
 window.confirmCloseRoom = function () {
@@ -378,7 +565,6 @@ window.confirmCloseRoom = function () {
             });
     }
 };
-
 
 window.retryConnection = function () {
     const viewStarting = document.getElementById("view-starting");
@@ -395,7 +581,11 @@ window.retryConnection = function () {
 
     roomFilesMap.clear();
     fileOrderCounter = 0;
+    recentActivities.length = 0;
+    connectedParticipantsMap.clear();
     renderRoomFilesList();
+    renderActivityList();
+    renderParticipantList();
 
     if (window.go && window.go.main && window.go.main.App) {
         window.go.main.App.Retry()
@@ -415,22 +605,22 @@ window.showRoomCreationScreen = function () {
     const errorEl = document.getElementById("create-room-error");
     if (errorEl) errorEl.style.display = "none";
 
-    // Invalidate any active countdown timer and room timestamps
     if (countdownInterval) {
         clearInterval(countdownInterval);
         countdownInterval = null;
     }
     expiresAtTimestamp = null;
 
-    // Clear old room files and state
     roomFilesMap.clear();
     fileOrderCounter = 0;
+    recentActivities.length = 0;
+    connectedParticipantsMap.clear();
     renderRoomFilesList();
+    renderActivityList();
+    renderParticipantList();
 
-    // Immediately render setup state on frontend
     renderState({ status: "setup" });
 
-    // Notify backend to invalidate old room session and switch home state to setup
     if (window.go && window.go.main && window.go.main.App && typeof window.go.main.App.ResetToSetup === "function") {
         window.go.main.App.ResetToSetup()
             .then((state) => {
@@ -439,16 +629,6 @@ window.showRoomCreationScreen = function () {
             .catch((err) => {
                 console.error("Failed to reset to setup:", err);
             });
-    }
-};
-
-window.cancelRoomCreation = function () {
-    const errorEl = document.getElementById("create-room-error");
-    if (errorEl) errorEl.style.display = "none";
-    if (expiresAtTimestamp && expiresAtTimestamp > Date.now()) {
-        renderState({ status: "ready" });
-    } else {
-        renderState({ status: "closed" });
     }
 };
 
@@ -483,6 +663,8 @@ window.submitCreateRoomForm = function (e) {
         }
     }
 
+    currentRoomPin = pin;
+
     if (errorEl) errorEl.style.display = "none";
     if (submitBtn) {
         submitBtn.disabled = true;
@@ -491,13 +673,17 @@ window.submitCreateRoomForm = function (e) {
 
     roomFilesMap.clear();
     fileOrderCounter = 0;
+    recentActivities.length = 0;
+    connectedParticipantsMap.clear();
     renderRoomFilesList();
+    renderActivityList();
+    renderParticipantList();
 
     const resetSubmitBtn = () => {
         if (submitBtn) {
             submitBtn.disabled = false;
             const btnText = typeof t === "function" ? t("create.submitBtn") : "Create Transfer Room";
-            submitBtn.innerHTML = `<span data-i18n="create.submitBtn">${btnText}</span> <span class="btn-arrow">→</span>`;
+            submitBtn.innerHTML = `<span data-i18n="create.submitBtn">${btnText}</span> <span>→</span>`;
         }
     };
 
@@ -538,6 +724,9 @@ function updateCountdown() {
     }
 }
 
+// --------------------------------------------------------------------------
+// Core State Rendering
+// --------------------------------------------------------------------------
 function renderState(state) {
     const viewStarting = document.getElementById("view-starting");
     const viewSetup = document.getElementById("view-setup");
@@ -547,6 +736,8 @@ function renderState(state) {
     const qrBox = document.getElementById("qr-box");
     const urlInput = document.getElementById("participant-link-input");
     const errorMsg = document.getElementById("error-message");
+    const pinBox = document.getElementById("pin-display-box");
+    const pinDisplay = document.getElementById("room-pin-display");
 
     currentStatus = state.status;
 
@@ -571,14 +762,12 @@ function renderState(state) {
         const statusBadge = document.getElementById("status-badge");
         if (state.status === "closing") {
             if (statusBadge) {
-                statusBadge.className = "badge badge-closing";
                 const rem = state.closingRemainingSeconds || 10;
-                statusBadge.innerHTML = `<span class="badge-dot dot-closing"></span><span>${typeof t === "function" ? t("room.closing", { sec: rem }) : "ROOM CLOSING"} (${rem}s)</span>`;
+                statusBadge.innerHTML = `<span class="status-dot" style="background: var(--accent-amber); box-shadow: 0 0 6px var(--accent-amber);"></span><span style="color: var(--accent-amber);">${typeof t === "function" ? t("room.closing", { sec: rem }) : "ROOM CLOSING"} (${rem}s)</span>`;
             }
         } else {
             if (statusBadge) {
-                statusBadge.className = "badge badge-active";
-                statusBadge.innerHTML = `<span class="badge-dot"></span><span data-i18n="room.active">${typeof t === "function" ? t("room.active") : "ROOM ACTIVE"}</span>`;
+                statusBadge.innerHTML = `<span class="status-dot"></span><span data-i18n="room.active">${typeof t === "function" ? t("room.active") : "ROOM ACTIVE"}</span>`;
             }
         }
 
@@ -588,6 +777,15 @@ function renderState(state) {
 
         if (urlInput && state.participantUrl) {
             urlInput.value = state.participantUrl;
+        }
+
+        if (pinBox && pinDisplay) {
+            if (currentRoomPin || state.pinRequired) {
+                pinDisplay.innerText = currentRoomPin || "PIN SET";
+                pinBox.style.display = "flex";
+            } else {
+                pinBox.style.display = "none";
+            }
         }
 
         if (state.expiresAt && !expiresAtTimestamp) {
@@ -624,7 +822,6 @@ function renderState(state) {
             errorMsg.innerText = state.errorMessage || (typeof t === "function" ? t("error.desc") : "An unexpected error occurred while starting HAMAL.");
         }
     } else {
-        // Starting
         if (viewSetup) viewSetup.classList.add("hidden");
         if (viewReady) viewReady.classList.add("hidden");
         if (viewClosed) viewClosed.classList.add("hidden");
@@ -637,7 +834,6 @@ function fetchHomeScreenState() {
     if (window.go && window.go.main && window.go.main.App) {
         window.go.main.App.GetHomeScreenState()
             .then((state) => {
-                // If user is currently on the setup screen, do not let stale closed/stopped states override it
                 if (currentStatus === "setup" && state.status !== "ready" && state.status !== "closing") {
                     return;
                 }
@@ -649,35 +845,31 @@ function fetchHomeScreenState() {
     }
 }
 
-// Drag & Drop visual feedback
-window.addEventListener("dragover", (e) => {
-    if (currentStatus === "ready") {
-        const dropTitle = typeof t === "function" ? t("upload.dropToSend") : "DROP TO SEND";
-        const dropHint = typeof t === "function" ? t("upload.releaseToSend") : "Release to send files";
-        setDropZoneState("dragover", dropTitle, dropHint);
-    }
-});
+// --------------------------------------------------------------------------
+// Theme Controls
+// --------------------------------------------------------------------------
+window.setUserTheme = function (theme) {
+    applySystemTheme(theme);
+};
 
-window.addEventListener("dragleave", (e) => {
-    if (e.clientX <= 0 || e.clientY <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
-        resetDropZoneDefault();
-    }
-});
-
-// Windows System Theme Integration
 function applySystemTheme(theme) {
     if (theme === "dark" || theme === "light") {
         document.documentElement.setAttribute("data-theme", theme);
+        const btnLight = document.getElementById("theme-btn-light");
+        const btnDark = document.getElementById("theme-btn-dark");
+        if (btnLight && btnDark) {
+            if (theme === "light") {
+                btnLight.classList.add("active");
+                btnDark.classList.remove("active");
+            } else {
+                btnDark.classList.add("active");
+                btnLight.classList.remove("active");
+            }
+        }
     }
 }
 
 function initTheme() {
-    // Remove old localStorage theme overrides so Windows system theme is always authoritative
-    try {
-        localStorage.removeItem("hamal_theme");
-    } catch (e) {}
-
-    // Query system theme from Go backend binding
     if (window.go && window.go.main && window.go.main.App && typeof window.go.main.App.GetSystemTheme === "function") {
         window.go.main.App.GetSystemTheme()
             .then(applySystemTheme)
@@ -693,14 +885,10 @@ function initTheme() {
     }
 }
 
-// Windows System Language Integration (Multilingual + RTL)
+// --------------------------------------------------------------------------
+// Language Initialization
+// --------------------------------------------------------------------------
 function initLanguage() {
-    // Remove any previous localStorage overrides so Windows system language is always authoritative
-    try {
-        localStorage.removeItem("hamal_lang");
-        localStorage.removeItem("hamal_language");
-    } catch (e) {}
-
     if (window.go && window.go.main && window.go.main.App && typeof window.go.main.App.GetSystemLanguage === "function") {
         window.go.main.App.GetSystemLanguage()
             .then((lang) => {
@@ -708,6 +896,8 @@ function initLanguage() {
                     setLocale(lang);
                 }
                 renderRoomFilesList();
+                renderActivityList();
+                renderParticipantList();
                 resetDropZoneDefault();
                 refreshUpdateTexts();
             })
@@ -717,6 +907,8 @@ function initLanguage() {
                     setLocale(navLang);
                 }
                 renderRoomFilesList();
+                renderActivityList();
+                renderParticipantList();
                 resetDropZoneDefault();
                 refreshUpdateTexts();
             });
@@ -726,22 +918,63 @@ function initLanguage() {
             setLocale(navLang);
         }
         renderRoomFilesList();
+        renderActivityList();
+        renderParticipantList();
         resetDropZoneDefault();
         refreshUpdateTexts();
     }
 }
 
-// Setup Wails Native File Drop and Runtime Events
-function initWailsDropListeners() {
+function initVersionDisplay() {
+    if (window.go && window.go.main && window.go.main.App && typeof window.go.main.App.GetAppVersion === "function") {
+        window.go.main.App.GetAppVersion().then((ver) => {
+            if (ver) {
+                const aboutVer = document.getElementById("about-app-version");
+                const sideVer = document.getElementById("sidebar-version");
+                if (aboutVer) aboutVer.innerText = ver;
+                if (sideVer) sideVer.innerText = ver;
+            }
+        }).catch(() => {});
+    }
+}
+
+// --------------------------------------------------------------------------
+// Drag & Drop Listeners
+// --------------------------------------------------------------------------
+window.addEventListener("dragover", (e) => {
+    if (currentStatus === "ready") {
+        const dropTitle = typeof t === "function" ? t("upload.dropToSend") : "DROP TO SEND";
+        const dropHint = typeof t === "function" ? t("upload.releaseToSend") : "Release to send files";
+        setDropZoneState("dragover", dropTitle, dropHint);
+    }
+});
+
+window.addEventListener("dragleave", (e) => {
+    if (e.clientX <= 0 || e.clientY <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+        resetDropZoneDefault();
+    }
+});
+
+// Keyboard listener for Escape key to close modals
+window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" || e.keyCode === 27) {
+        window.closeAllModals();
+    }
+});
+
+// --------------------------------------------------------------------------
+// Wails Event Subscriptions
+// --------------------------------------------------------------------------
+function initWailsListeners() {
     initTheme();
     initLanguage();
+    initVersionDisplay();
 
     if (window.runtime) {
         if (typeof window.runtime.OnFileDrop === "function") {
             window.runtime.OnFileDrop(() => {}, false);
         }
 
-        // Listen for live Windows system theme change notifications from Go
         window.runtime.EventsOn("system-theme-changed", (theme) => {
             applySystemTheme(theme);
         });
@@ -750,28 +983,35 @@ function initWailsDropListeners() {
             const title = data.total > 1 
                 ? (typeof t === "function" ? t("upload.uploadingCount", { current: data.index, total: data.total }) : `UPLOADING ${data.index} / ${data.total}`)
                 : (typeof t === "function" ? t("upload.uploading") : "UPLOADING");
-            setDropZoneState("uploading", title, getBrowseHintHtml(), 0, data.filename);
+            setDropZoneState("uploading", title, "Sending parcel…", 0, data.filename);
         });
 
         window.runtime.EventsOn("upload-progress", (data) => {
             const title = data.total > 1 
                 ? (typeof t === "function" ? t("upload.uploadingCount", { current: data.index, total: data.total }) : `UPLOADING ${data.index} / ${data.total}`)
                 : (typeof t === "function" ? t("upload.uploading") : "UPLOADING");
-            setDropZoneState("uploading", title, getBrowseHintHtml(), data.percent || 0, data.filename);
+            setDropZoneState("uploading", title, "Sending parcel…", data.percent || 0, data.filename);
         });
 
         window.runtime.EventsOn("upload-file-complete", (data) => {
             if (data && data.fileId) {
                 fileOrderCounter++;
+                if (data.sizeBytes) {
+                    totalTransferredBytes += data.sizeBytes;
+                    const transferredEl = document.getElementById("metric-transferred-size");
+                    if (transferredEl) transferredEl.innerText = formatBytes(totalTransferredBytes);
+                }
                 roomFilesMap.set(data.fileId, {
                     fileId: data.fileId,
                     filename: data.filename,
                     sizeFormatted: data.sizeFormatted || "",
+                    sizeBytes: data.sizeBytes || 0,
                     direction: "outbound",
                     saved: false,
                     order: fileOrderCounter,
                     timestamp: Date.now()
                 });
+                addRecentActivity("upload", data.filename, `Uploaded from Linux (${data.sizeFormatted || ""})`);
                 renderRoomFilesList();
             }
         });
@@ -804,6 +1044,11 @@ function initWailsDropListeners() {
 
         window.runtime.EventsOn("file-received", (data) => {
             if (data && data.fileId) {
+                if (data.sizeBytes) {
+                    totalTransferredBytes += data.sizeBytes;
+                    const transferredEl = document.getElementById("metric-transferred-size");
+                    if (transferredEl) transferredEl.innerText = formatBytes(totalTransferredBytes);
+                }
                 const existing = roomFilesMap.get(data.fileId);
                 if (existing) {
                     roomFilesMap.set(data.fileId, {
@@ -823,11 +1068,12 @@ function initWailsDropListeners() {
                         timestamp: Date.now(),
                     });
                 }
+                registerParticipant("Mobile Participant", "LAN Peer");
+                addRecentActivity("download", data.filename, `Received from peer (${data.sizeFormatted || ""})`);
                 renderRoomFilesList();
             }
         });
 
-        // Background update check events from Go
         window.runtime.EventsOn("update-available", (info) => {
             if (info && info.available) {
                 showUpdateBanner(info);
@@ -843,17 +1089,9 @@ function initWailsDropListeners() {
 }
 
 if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-        initWailsDropListeners();
-        if (!isResponsibleUseAcknowledged()) {
-            showResponsibleUseFirstLaunch();
-        }
-    });
+    document.addEventListener("DOMContentLoaded", initWailsListeners);
 } else {
-    initWailsDropListeners();
-    if (!isResponsibleUseAcknowledged()) {
-        showResponsibleUseFirstLaunch();
-    }
+    initWailsListeners();
 }
 
 // Initial polling
@@ -866,287 +1104,18 @@ const pollTimer = setInterval(() => {
     }
 }, 300);
 
-// Responsible Use Notice Management
-const RESPONSIBLE_USE_KEY = "hamal_responsible_use_acknowledged";
-
-function isResponsibleUseAcknowledged() {
-    try {
-        return localStorage.getItem(RESPONSIBLE_USE_KEY) === "true";
-    } catch (e) {
-        return false;
-    }
-}
-
-function showResponsibleUseFirstLaunch() {
-    const backdrop = document.getElementById("modal-backdrop");
-    const modalResp = document.getElementById("modal-responsible-use");
-    const closeX = document.getElementById("responsible-use-close-x");
-    const closeBtn = document.getElementById("responsible-use-close-btn");
-    const continueBtn = document.getElementById("responsible-use-continue-btn");
-    const ackGroup = document.getElementById("responsible-use-ack-group");
-    const checkbox = document.getElementById("responsible-use-checkbox");
-
-    if (closeX) closeX.classList.add("hidden");
-    if (closeBtn) closeBtn.classList.add("hidden");
-    if (continueBtn) {
-        continueBtn.classList.remove("hidden");
-        continueBtn.disabled = true;
-    }
-    if (ackGroup) ackGroup.classList.remove("hidden");
-    if (checkbox) checkbox.checked = false;
-
-    if (modalResp) modalResp.classList.remove("hidden");
-    if (backdrop) backdrop.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-}
-
-window.onResponsibleUseCheckboxChange = function () {
-    const checkbox = document.getElementById("responsible-use-checkbox");
-    const continueBtn = document.getElementById("responsible-use-continue-btn");
-    if (continueBtn) {
-        continueBtn.disabled = !(checkbox && checkbox.checked);
-    }
-};
-
-window.acceptResponsibleUse = function () {
-    try {
-        localStorage.setItem(RESPONSIBLE_USE_KEY, "true");
-    } catch (e) {}
-
-    window.closeAllModals();
-    fetchHomeScreenState();
-};
-
-window.openResponsibleUseModalFromAbout = function () {
-    const modalAbout = document.getElementById("modal-about");
-    const modalResp = document.getElementById("modal-responsible-use");
-    const closeX = document.getElementById("responsible-use-close-x");
-    const closeBtn = document.getElementById("responsible-use-close-btn");
-    const continueBtn = document.getElementById("responsible-use-continue-btn");
-    const ackGroup = document.getElementById("responsible-use-ack-group");
-
-    if (modalAbout) modalAbout.classList.add("hidden");
-
-    // In view-only mode from About: show close buttons, hide continue/checkbox
-    if (closeX) closeX.classList.remove("hidden");
-    if (closeBtn) closeBtn.classList.remove("hidden");
-    if (continueBtn) continueBtn.classList.add("hidden");
-    if (ackGroup) ackGroup.classList.add("hidden");
-
-    if (modalResp) modalResp.classList.remove("hidden");
-};
-
-// QR Lightbox Management
-window.openQRLightbox = function () {
-    const qrBox = document.getElementById("qr-box");
-    const lightboxBox = document.getElementById("qr-lightbox-box");
-    const modalQR = document.getElementById("modal-qr");
-    const backdrop = document.getElementById("modal-backdrop");
-
-    if (!qrBox || !lightboxBox || !modalQR || !backdrop) return;
-
-    const svg = qrBox.querySelector("svg");
-    if (!svg) return;
-
-    lightboxBox.innerHTML = svg.outerHTML;
-
-    const modalAbout = document.getElementById("modal-about");
-    const modalResp = document.getElementById("modal-responsible-use");
-    if (modalAbout) modalAbout.classList.add("hidden");
-    if (modalResp) modalResp.classList.add("hidden");
-
-    modalQR.classList.remove("hidden");
-    backdrop.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-};
-
-// Modal Management (Feedback, About, Responsible Use, QR Lightbox)
-window.openFeedbackModal = function () {
-    const backdrop = document.getElementById("modal-backdrop");
-    const modalFeedback = document.getElementById("modal-feedback");
-    const modalAbout = document.getElementById("modal-about");
-    const statusMsg = document.getElementById("feedback-status-msg");
-    const msgInput = document.getElementById("feedback-message");
-
-    if (modalAbout) modalAbout.classList.add("hidden");
-    if (modalFeedback) modalFeedback.classList.remove("hidden");
-    if (backdrop) backdrop.classList.remove("hidden");
-    if (statusMsg) statusMsg.style.display = "none";
-    if (msgInput) {
-        setTimeout(() => msgInput.focus(), 50);
-    }
-};
-
-window.openAboutModal = function () {
-    const backdrop = document.getElementById("modal-backdrop");
-    const modalFeedback = document.getElementById("modal-feedback");
-    const modalAbout = document.getElementById("modal-about");
-    const modalResp = document.getElementById("modal-responsible-use");
-    const modalQR = document.getElementById("modal-qr");
-
-    if (modalFeedback) modalFeedback.classList.add("hidden");
-    if (modalResp) modalResp.classList.add("hidden");
-    if (modalQR) modalQR.classList.add("hidden");
-    if (modalAbout) modalAbout.classList.remove("hidden");
-    if (backdrop) backdrop.classList.remove("hidden");
-};
-
-window.closeAllModals = function (e) {
-    if (e && e.target && e.target.id !== "modal-backdrop" && !e.target.classList.contains("modal-close-btn")) {
-        return;
-    }
-
-    // Do not dismiss backdrop on first launch before acceptance
-    if (!isResponsibleUseAcknowledged()) {
-        const modalResp = document.getElementById("modal-responsible-use");
-        if (modalResp && !modalResp.classList.contains("hidden")) {
-            return;
-        }
-    }
-
-    const backdrop = document.getElementById("modal-backdrop");
-    const modalFeedback = document.getElementById("modal-feedback");
-    const modalAbout = document.getElementById("modal-about");
-    const modalResp = document.getElementById("modal-responsible-use");
-    const modalQR = document.getElementById("modal-qr");
-    const modalCloseConfirm = document.getElementById("modal-close-confirm");
-
-    if (backdrop) backdrop.classList.add("hidden");
-    if (modalFeedback) modalFeedback.classList.add("hidden");
-    if (modalAbout) modalAbout.classList.add("hidden");
-    if (modalResp) modalResp.classList.add("hidden");
-    if (modalQR) modalQR.classList.add("hidden");
-    if (modalCloseConfirm) modalCloseConfirm.classList.add("hidden");
-    document.body.style.overflow = "";
-
-};
-
-window.submitFeedbackForm = function (e) {
-    if (e) e.preventDefault();
-
-    const typeEl = document.getElementById("feedback-type");
-    const msgEl = document.getElementById("feedback-message");
-    const emailEl = document.getElementById("feedback-email");
-    const submitBtn = document.getElementById("feedback-submit-btn");
-    const statusMsg = document.getElementById("feedback-status-msg");
-
-    const type = typeEl ? typeEl.value : "other";
-    const message = msgEl ? msgEl.value.trim() : "";
-    const email = emailEl ? emailEl.value.trim() : "";
-
-    if (!message) {
-        if (statusMsg) {
-            statusMsg.className = "feedback-status-msg error";
-            statusMsg.innerText = typeof t === "function" ? t("feedback.requiredMsg") : "Please enter a message before submitting.";
-            statusMsg.style.display = "block";
-        }
-        return;
-    }
-
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerText = typeof t === "function" ? t("feedback.sending") : "Sending...";
-    }
-
-    if (statusMsg) {
-        statusMsg.style.display = "none";
-    }
-
-    const payload = { type, message, email };
-
-    if (window.go && window.go.main && window.go.main.App && typeof window.go.main.App.SubmitFeedback === "function") {
-        window.go.main.App.SubmitFeedback(payload)
-            .then((res) => {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = typeof t === "function" ? t("feedback.sendBtn") : "Send Feedback";
-                }
-
-                if (!statusMsg) return;
-
-                if (res.success) {
-                    statusMsg.className = "feedback-status-msg success";
-                    statusMsg.innerText = typeof t === "function" ? t("feedback.success") : (res.message || "Thank you for helping us improve HAMAL ❤️");
-                    statusMsg.style.display = "block";
-                    if (msgEl) msgEl.value = "";
-                    if (emailEl) emailEl.value = "";
-                    setTimeout(() => {
-                        window.closeAllModals();
-                    }, 2500);
-                } else if (!res.configured) {
-                    statusMsg.className = "feedback-status-msg info";
-                    statusMsg.innerText = typeof t === "function" ? t("feedback.unconfigured") : (res.message || "Feedback is not available yet. Please try again later.");
-                    statusMsg.style.display = "block";
-                } else {
-                    statusMsg.className = "feedback-status-msg error";
-                    statusMsg.innerText = res.message || (typeof t === "function" ? t("error.desc") : "Failed to submit feedback.");
-                    statusMsg.style.display = "block";
-                }
-            })
-            .catch((err) => {
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = typeof t === "function" ? t("feedback.sendBtn") : "Send Feedback";
-                }
-                if (statusMsg) {
-                    statusMsg.className = "feedback-status-msg error";
-                    statusMsg.innerText = String(err);
-                    statusMsg.style.display = "block";
-                }
-            });
-    } else {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerText = typeof t === "function" ? t("feedback.sendBtn") : "Send Feedback";
-        }
-        if (statusMsg) {
-            statusMsg.className = "feedback-status-msg info";
-            statusMsg.innerText = typeof t === "function" ? t("feedback.unconfigured") : "Feedback is not available yet. Please try again later.";
-            statusMsg.style.display = "block";
-        }
-    }
-};
-
-// Open Feedback mailto action
-window.openFeedbackEmail = function (e) {
-    if (e && typeof e.preventDefault === "function") {
-        e.preventDefault();
-    }
-    const mailtoUrl = "mailto:hamalapp@outlook.com?subject=HAMAL%20Feedback";
-    if (window.go && window.go.main && window.go.main.App && typeof window.go.main.App.OpenFeedbackEmail === "function") {
-        window.go.main.App.OpenFeedbackEmail();
-    } else if (window.runtime && typeof window.runtime.BrowserOpenURL === "function") {
-        window.runtime.BrowserOpenURL(mailtoUrl);
-    } else {
-        window.location.href = mailtoUrl;
-    }
-};
-
-// Keyboard listener for Escape key to close modals
-window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" || e.keyCode === 27) {
-        window.closeAllModals();
-    }
-});
-
 // --------------------------------------------------------------------------
-// Update Notification Management
+// Update Banner Management
 // --------------------------------------------------------------------------
 let pendingUpdateInfo = null;
 
 function refreshUpdateTexts() {
     if (!pendingUpdateInfo) return;
     const verText = document.getElementById("update-version-text");
-    const curText = document.getElementById("update-current-text");
     if (verText) {
         verText.innerText = typeof t === "function"
             ? t("update.available", { version: pendingUpdateInfo.latestVersion || "" })
             : `Version ${pendingUpdateInfo.latestVersion} is now available.`;
-    }
-    if (curText) {
-        curText.innerText = typeof t === "function"
-            ? t("update.current", { version: pendingUpdateInfo.currentVersion || "" })
-            : `You are currently using ${pendingUpdateInfo.currentVersion}.`;
     }
 }
 
@@ -1156,7 +1125,6 @@ function showUpdateBanner(info) {
 
     const banner = document.getElementById("update-banner");
     const verText = document.getElementById("update-version-text");
-    const curText = document.getElementById("update-current-text");
     const progressBox = document.getElementById("update-progress-box");
     const actionsBox = document.getElementById("update-actions-box");
     const errorBox = document.getElementById("update-error-box");
@@ -1169,23 +1137,14 @@ function showUpdateBanner(info) {
             : `Version ${info.latestVersion} is now available.`;
     }
 
-    if (curText) {
-        curText.innerText = typeof t === "function"
-            ? t("update.current", { version: info.currentVersion || "" })
-            : `You are currently using ${info.currentVersion}.`;
-    }
-
     if (progressBox) progressBox.classList.add("hidden");
-    if (errorBox) errorBox.classList.add("hidden");
+    if (errorBox) errorBox.style.display = "none";
     if (actionsBox) actionsBox.classList.remove("hidden");
     if (nowBtn) {
         nowBtn.disabled = false;
         nowBtn.innerText = typeof t === "function" ? t("update.updateNow") : "Update Now";
     }
-    if (laterBtn) {
-        laterBtn.disabled = false;
-    }
-
+    if (laterBtn) laterBtn.disabled = false;
     if (banner) banner.classList.remove("hidden");
 }
 
@@ -1205,81 +1164,13 @@ window.dismissUpdateBanner = function () {
 window.startUpdate = function () {
     if (!pendingUpdateInfo || !pendingUpdateInfo.assetUrl) return;
 
-    const banner = document.getElementById("update-banner");
-    const progressBox = document.getElementById("update-progress-box");
-    const actionsBox = document.getElementById("update-actions-box");
-    const progressStatus = document.getElementById("update-progress-status");
-    const errorBox = document.getElementById("update-error-box");
-    const nowBtn = document.getElementById("update-now-btn");
-    const laterBtn = document.getElementById("update-later-btn");
-
-    if (nowBtn) nowBtn.disabled = true;
-    if (laterBtn) laterBtn.disabled = true;
-    if (errorBox) errorBox.classList.add("hidden");
-
-    if (progressBox) progressBox.classList.remove("hidden");
-    if (actionsBox) actionsBox.classList.add("hidden");
-
-    if (progressStatus) {
-        progressStatus.innerText = typeof t === "function"
-            ? t("update.downloading", { version: pendingUpdateInfo.latestVersion || "" })
-            : `Downloading HAMAL ${pendingUpdateInfo.latestVersion}…`;
-    }
-
-    updateProgressUI(0);
-
     if (window.go && window.go.main && window.go.main.App && typeof window.go.main.App.ApplyUpdate === "function") {
         window.go.main.App.ApplyUpdate(pendingUpdateInfo.assetUrl)
-            .then((res) => {
-                let success = false;
-                let errMsg = "";
-                if (Array.isArray(res)) {
-                    success = res[0];
-                    errMsg = res[1] || "";
-                } else if (typeof res === "object" && res !== null) {
-                    success = res.success || res.r0 || false;
-                    errMsg = res.errorMessage || res.r1 || "";
-                } else if (typeof res === "boolean") {
-                    success = res;
-                }
-
-                if (success) {
-                    if (progressStatus) {
-                        progressStatus.innerText = typeof t === "function"
-                            ? t("update.installing")
-                            : "Applying update and restarting…";
-                    }
-                    updateProgressUI(100);
-                } else {
-                    if (progressBox) progressBox.classList.add("hidden");
-                    if (actionsBox) actionsBox.classList.remove("hidden");
-                    if (nowBtn) {
-                        nowBtn.disabled = false;
-                        nowBtn.innerText = typeof t === "function" ? t("update.retry") : "Retry";
-                    }
-                    if (laterBtn) laterBtn.disabled = false;
-
-                    if (errorBox) {
-                        errorBox.innerText = errMsg || (typeof t === "function" ? t("update.failed") : "Update failed. Please try again.");
-                        errorBox.classList.remove("hidden");
-                    }
-                }
+            .then(() => {
+                window.dismissUpdateBanner();
             })
-            .catch((err) => {
-                if (progressBox) progressBox.classList.add("hidden");
-                if (actionsBox) actionsBox.classList.remove("hidden");
-                if (nowBtn) {
-                    nowBtn.disabled = false;
-                    nowBtn.innerText = typeof t === "function" ? t("update.retry") : "Retry";
-                }
-                if (laterBtn) laterBtn.disabled = false;
-
-                if (errorBox) {
-                    errorBox.innerText = String(err) || (typeof t === "function" ? t("update.failed") : "Update failed. Please try again.");
-                    errorBox.classList.remove("hidden");
-                }
+            .catch(() => {
+                window.dismissUpdateBanner();
             });
     }
 };
-
-
