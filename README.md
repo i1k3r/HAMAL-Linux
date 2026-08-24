@@ -140,4 +140,12 @@ HAMAL is intended solely for lawful, authorized peer-to-peer data synchronizatio
 
 ## License
 
-Distributed under the [MIT License](LICENSE). © 2026 i1k3r
+HAMAL is source-available software licensed under the
+[HAMAL Source-Available Organizational Use License](LICENSE).
+
+Organizations may freely use, modify, fork, and deploy HAMAL for their own
+internal operations, including commercial business operations.
+
+Commercial redistribution, resale, productization, and offering HAMAL or
+derivative works as a commercial service require separate permission from
+the copyright holder.
