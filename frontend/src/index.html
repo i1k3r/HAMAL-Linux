@@ -65,7 +65,7 @@ Lay files on the table.</h1>
                     <div class="lt-field">
                         <label for="room-pin-input" data-i18n="lt.pinLabel">PIN for other devices (optional)</label>
                         <div class="lt-pinrow">
-                            <input type="password" id="room-pin-input" name="pin" maxlength="8" autocomplete="off" spellcheck="false" class="lt-home-input" data-i18n-placeholder="lt.pinPlaceholder" placeholder="4 to 8 characters" aria-describedby="pin-help create-room-error">
+                            <input type="password" id="room-pin-input" name="pin" maxlength="8" inputmode="numeric" pattern="[0-9]{4,8}" autocomplete="off" spellcheck="false" class="lt-home-input" data-i18n-placeholder="lt.pinPlaceholder" placeholder="4 to 8 digits" aria-describedby="pin-help create-room-error">
                             <button type="button" id="pin-toggle-btn" class="lt-ink-btn is-soft lt-pin-eye" onclick="togglePinVisibility()" title="Show or hide the PIN" aria-label="Show or hide the PIN" aria-pressed="false">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                             </button>

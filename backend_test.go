@@ -584,7 +584,7 @@ func TestRoomCreationLifespanAndPINConfig(t *testing.T) {
 	}
 
 	// 5. Test room creation with max TTL (24 Hours = 86400s)
-	stateMaxTTL, err := bc.CreateRoomWithConfig(86400, "abcd")
+	stateMaxTTL, err := bc.CreateRoomWithConfig(86400, "12345678")
 	if err != nil {
 		t.Fatalf("failed to create room with 24h TTL: %v", err)
 	}
@@ -592,7 +592,24 @@ func TestRoomCreationLifespanAndPINConfig(t *testing.T) {
 		t.Fatalf("expected status 'ready', got '%s'", stateMaxTTL.Status)
 	}
 	if !stateMaxTTL.PinRequired {
-		t.Fatal("expected PinRequired=true for PIN 'abcd'")
+		t.Fatal("expected PinRequired=true for PIN '12345678'")
+	}
+}
+
+func TestCreateRoomRejectsNonDigitPIN(t *testing.T) {
+	for _, pin := range []string{"abcd", "12a4", "123", "123456789", "１２３４"} {
+		if isValidPIN(pin) {
+			t.Errorf("isValidPIN(%q) = true, want false", pin)
+		}
+	}
+	for _, pin := range []string{"0000", "1234", "12345678"} {
+		if !isValidPIN(pin) {
+			t.Errorf("isValidPIN(%q) = false, want true", pin)
+		}
+	}
+	bc := NewBackendController()
+	if _, err := bc.CreateRoomWithConfig(300, "abcd"); err == nil || !strings.Contains(err.Error(), "digits") {
+		t.Fatalf("CreateRoomWithConfig with PIN abcd: err = %v, want digit error", err)
 	}
 }
 

@@ -59,9 +59,11 @@ func ParseVersion(v string) (SemVersion, error) {
 
 // CompareVersions compares two version strings (v1 and v2).
 // Returns:
-//   -1 if v1 < v2
-//    0 if v1 == v2
-//    1 if v1 > v2
+//
+//	-1 if v1 < v2
+//	 0 if v1 == v2
+//	 1 if v1 > v2
+//
 // Returns an error if either version is invalid.
 func CompareVersions(v1, v2 string) (int, error) {
 	sv1, err := ParseVersion(v1)

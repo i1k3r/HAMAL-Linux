@@ -55,13 +55,13 @@ apps:
 
 parts:
   # The HAMAL server module, pinned to the commit go.mod records
-  # (github.com/i1k3r/HAMAL v0.0.0-20260822183927-0072645cba81). It is only a build input:
+  # (github.com/i1k3r/HAMAL v0.0.0-20261115113322-6fad72ec956e). It is only a build input:
   # nothing from this part is installed into the snap.
   hamal-server:
     plugin: nil
     source: https://github.com/i1k3r/HAMAL.git
     source-type: git
-    source-commit: 0072645cba81dd4f2929f5c9e73dc901da1af3c3
+    source-commit: 6fad72ec956e8db57a0c2b705d84eaaf3a0bbafe
     override-build: |
       true
 
@@ -96,7 +96,7 @@ parts:
       # variable for the parts dir, so derive it from this part's own $CRAFT_PART_SRC.
       SERVER_SRC="$(dirname "$(dirname "$CRAFT_PART_SRC")")/hamal-server/src"
       SERVER_COMMIT="$(git -C "$SERVER_SRC" rev-parse HEAD)"
-      if [ "$SERVER_COMMIT" != "0072645cba81dd4f2929f5c9e73dc901da1af3c3" ]; then
+      if [ "$SERVER_COMMIT" != "6fad72ec956e8db57a0c2b705d84eaaf3a0bbafe" ]; then
         echo "hamal-server is at $SERVER_COMMIT, not the pinned commit" >&2
         exit 1
       fi

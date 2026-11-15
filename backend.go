@@ -288,6 +288,15 @@ func (b *BackendController) CreateRoom() error {
 
 // CreateRoomWithConfig calls the HAMAL HTTP API to create a new room with custom TTL and optional PIN.
 func (b *BackendController) CreateRoomWithConfig(ttlSeconds int, pin string) (HomeScreenState, error) {
+	// Check the PIN first: the server rejects anything but 4 to 8 digits.
+	pin = strings.TrimSpace(pin)
+	if pin != "" {
+		if !isValidPIN(pin) {
+			err := errors.New("PIN must be 4 to 8 digits")
+			return b.GetHomeScreenState(), err
+		}
+	}
+
 	b.mu.RLock()
 	localURL := b.status.LocalURL
 	isServerRunning := b.status.Status == "running"
@@ -301,13 +310,6 @@ func (b *BackendController) CreateRoomWithConfig(ttlSeconds int, pin string) (Ho
 
 	if ttlSeconds <= 0 {
 		ttlSeconds = 3600
-	}
-	pin = strings.TrimSpace(pin)
-	if pin != "" {
-		if len(pin) < 4 || len(pin) > 8 {
-			err := errors.New("PIN must be between 4 and 8 characters")
-			return b.GetHomeScreenState(), err
-		}
 	}
 
 	// 1. Call POST /api/v1/rooms with configured TTL and optional PIN
@@ -480,7 +482,7 @@ func (b *BackendController) checkNewFiles() {
 		Status                  string `json:"status"`
 		CloseDeadline           string `json:"close_deadline,omitempty"`
 		ClosingRemainingSeconds int    `json:"closing_remaining_seconds,omitempty"`
-		Files []struct {
+		Files                   []struct {
 			FileID      string `json:"file_id"`
 			Filename    string `json:"filename"`
 			SizeBytes   int64  `json:"size_bytes"`
@@ -1017,4 +1019,18 @@ func detectLanIPv4() string {
 	}
 
 	return "127.0.0.1"
+}
+
+// isValidPIN reports whether pin is 4 to 8 ASCII digits, the rule the HAMAL
+// server enforces (room.ErrInvalidPIN).
+func isValidPIN(pin string) bool {
+	if len(pin) < 4 || len(pin) > 8 {
+		return false
+	}
+	for i := 0; i < len(pin); i++ {
+		if pin[i] < '0' || pin[i] > '9' {
+			return false
+		}
+	}
+	return true
 }

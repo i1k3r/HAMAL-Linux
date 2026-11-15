@@ -550,18 +550,10 @@ window.submitCreateRoomForm = function (e) {
         }
     };
 
-    if (pin.length > 0) {
-        if (pin.length < 4 || pin.length > 8) {
-            pinError();
-            return;
-        }
-        for (let i = 0; i < pin.length; i++) {
-            const code = pin.charCodeAt(i);
-            if (code <= 31 || code > 126) {
-                pinError();
-                return;
-            }
-        }
+    // PINs are 4 to 8 digits, as in the HAMAL server and web client.
+    if (pin.length > 0 && !/^[0-9]{4,8}$/.test(pin)) {
+        pinError();
+        return;
     }
 
     currentRoomPin = pin;

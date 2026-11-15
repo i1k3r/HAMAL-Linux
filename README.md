@@ -113,7 +113,7 @@ cp build/linux/hamal.svg ~/.local/share/icons/hicolor/scalable/apps/hamal.svg
 ### Prerequisites
 
 - **Go**: 1.25 or newer (see `go.mod`)
-- **HAMAL server module**: `go.mod` replaces `github.com/i1k3r/HAMAL` with `../HAMAL`, so check out [i1k3r/HAMAL](https://github.com/i1k3r/HAMAL) next to this repository at the commit `go.mod` records (`0072645cba81`)
+- **HAMAL server module**: `go.mod` replaces `github.com/i1k3r/HAMAL` with `../HAMAL`, so check out [i1k3r/HAMAL](https://github.com/i1k3r/HAMAL) next to this repository at the commit `go.mod` records (`6fad72ec956e`)
 - **Build Packages (Ubuntu / Debian)**:
   ```bash
   sudo apt install -y build-essential libgtk-3-dev libwebkit2gtk-4.1-dev pkg-config
