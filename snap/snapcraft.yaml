@@ -92,7 +92,9 @@ parts:
       # go.mod replaces github.com/i1k3r/HAMAL with ../HAMAL for local development and CI.
       # Here, point it at the pinned hamal-server checkout instead. This edits only this
       # part's build copy of go.mod, never the repository.
-      SERVER_SRC="$CRAFT_PARTS_DIRECTORY/hamal-server/src"
+      # craft-parts keeps each part's source in <parts dir>/<part name>/src and exports no
+      # variable for the parts dir, so derive it from this part's own $CRAFT_PART_SRC.
+      SERVER_SRC="$(dirname "$(dirname "$CRAFT_PART_SRC")")/hamal-server/src"
       SERVER_COMMIT="$(git -C "$SERVER_SRC" rev-parse HEAD)"
       if [ "$SERVER_COMMIT" != "0072645cba81dd4f2929f5c9e73dc901da1af3c3" ]; then
         echo "hamal-server is at $SERVER_COMMIT, not the pinned commit" >&2

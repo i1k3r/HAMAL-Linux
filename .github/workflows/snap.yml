@@ -123,6 +123,8 @@ jobs:
           # The binary was built inside the snap build and must carry the version from VERSION.
           grep -aq "v${VERSION}" snap-full/usr/bin/HAMAL-Linux || { echo "snap binary does not contain v${VERSION}"; exit 1; }
           file snap-full/usr/bin/HAMAL-Linux
+          # The build only rewrites the replace directive in its own copy of go.mod.
+          git diff --exit-code -- go.mod go.sum
           case "$(basename "$SNAP_FILE")" in hamal_${VERSION}_*.snap) ;; *) echo "unexpected snap file name $SNAP_FILE"; exit 1;; esac
           sha256sum "$SNAP_FILE"
 
