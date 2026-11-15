@@ -9,7 +9,7 @@
 
 [![Platform](https://img.shields.io/badge/Platform-Linux%20x86--64-FCC624?logo=linux&logoColor=black)](https://github.com/i1k3r/HAMAL-Linux)
 [![Packaging](https://img.shields.io/badge/Snap%20Store-Available-E95420?logo=snapcraft&logoColor=white)](https://snapcraft.io/hamal)
-[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
 </div>
@@ -98,29 +98,48 @@ cp build/linux/hamal.svg ~/.local/share/icons/hicolor/scalable/apps/hamal.svg
 
 ### Prerequisites
 
-- **Go**: 1.23 or newer
-- **Wails CLI v2**: `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+- **Go**: 1.25 or newer (see `go.mod`)
+- **HAMAL server module**: `go.mod` replaces `github.com/i1k3r/HAMAL` with `../HAMAL`, so check out [i1k3r/HAMAL](https://github.com/i1k3r/HAMAL) next to this repository at the commit `go.mod` records (`0072645cba81`)
 - **Build Packages (Ubuntu / Debian)**:
   ```bash
   sudo apt install -y build-essential libgtk-3-dev libwebkit2gtk-4.1-dev pkg-config
   ```
 
+### Version
+
+The `VERSION` file is the single source of truth. `scripts/build.sh` injects it into the binary (`-ldflags -X main.AppVersion=v<VERSION>`), and `snap/snapcraft.yaml` sets the snap version from the same file. To release a new version, change `VERSION` only.
+
 ### Build Command
 
-Compile using Wails with WebKitGTK 4.1 tags:
-
 ```bash
-CGO_ENABLED=1 wails build -tags webkit2_41 -s -o HAMAL-Linux
+scripts/build.sh
 ```
 
-The resulting executable will be located at `build/bin/HAMAL-Linux`.
+This builds `./HAMAL-Linux` with the Wails production tags and WebKitGTK 4.1 (`desktop,production,webkit2_41`) and checks that the binary carries the version from `VERSION`. A plain `go build` without the script reports the version `dev`.
+
+### Building the Snap
+
+Build the binary first, then pack it:
+
+```bash
+scripts/build.sh
+snapcraft pack
+```
+
+The `Build and test` GitHub Actions workflow does the same on Ubuntu 24.04 and uploads the `.snap` as a build artifact for review. It does not publish to the Snap Store.
 
 ### Running Tests
 
 ```bash
 go test -v ./...
 go vet ./...
+node scripts/check-i18n.mjs
 ```
+
+### Updates
+
+- **Snap Store installs** are updated by snapd's automatic refresh. The app does not check GitHub and never shows an update notice.
+- **Plain binary installs** check GitHub Releases at startup and, when a newer release exists, offer to open the release page. HAMAL never downloads or replaces its own executable.
 
 ---
 

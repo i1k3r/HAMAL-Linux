@@ -46,6 +46,10 @@ export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }
 
+export function IsSnapPackage() {
+  return window['go']['main']['App']['IsSnapPackage']();
+}
+
 export function OpenFeedbackEmail() {
   return window['go']['main']['App']['OpenFeedbackEmail']();
 }

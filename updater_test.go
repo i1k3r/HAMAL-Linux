@@ -203,13 +203,78 @@ func TestFileSHA256Checksum(t *testing.T) {
 	}
 }
 
-func TestAppVersionConstantIntegrity(t *testing.T) {
+func TestAppVersionComesFromVersionFile(t *testing.T) {
+	want := "v" + readVersionFile(t)
 	app := NewApp()
-	v := app.GetAppVersion()
-	if v != "v0.8.2" {
-		t.Fatalf("expected AppVersion constant 'v0.8.2', got %q", v)
+	// Test binaries are built without -ldflags, so they report "dev"; a build that injects the
+	// version must inject exactly the VERSION file.
+	if got := app.GetAppVersion(); got != "dev" && got != want {
+		t.Fatalf("GetAppVersion() = %q, want %q (from VERSION) or \"dev\"", got, want)
 	}
-	if AppVersion != "v0.8.2" {
-		t.Fatalf("expected global AppVersion 'v0.8.2', got %q", AppVersion)
+	if IsUpdateAvailable("dev", "v99.0.0") {
+		t.Fatal("a dev build must never report an available update")
+	}
+}
+
+func TestSnapInstallDetection(t *testing.T) {
+	t.Setenv("SNAP", "")
+	t.Setenv("SNAP_NAME", "")
+	if IsSnapInstall() {
+		t.Fatal("expected a plain install without SNAP variables")
+	}
+	t.Setenv("SNAP", "/snap/hamal/x1")
+	t.Setenv("SNAP_NAME", "hamal")
+	if !IsSnapInstall() {
+		t.Fatal("expected a snap install when snapd variables are set")
+	}
+	if !NewApp().IsSnapPackage() {
+		t.Fatal("IsSnapPackage() should report the snap install to the UI")
+	}
+}
+
+func TestSnapInstallNeverChecksGitHub(t *testing.T) {
+	t.Setenv("SNAP", "/snap/hamal/x1")
+	t.Setenv("SNAP_NAME", "hamal")
+
+	app := NewApp()
+	info := app.CheckForUpdates()
+	if info.Available || info.LatestVersion != "" || info.ErrorMessage != "" {
+		t.Fatalf("snap install should report no update without contacting GitHub, got %+v", info)
+	}
+	ok, msg := app.ApplyUpdate(ReleasesPageURLPrefix + "/tag/v99.0.0")
+	if ok || msg == "" {
+		t.Fatalf("ApplyUpdate must do nothing for snap installs, got (%v, %q)", ok, msg)
+	}
+}
+
+func TestApplyUpdateOnlyOpensReleasePages(t *testing.T) {
+	t.Setenv("SNAP", "")
+	t.Setenv("SNAP_NAME", "")
+	valid := []string{
+		"https://github.com/i1k3r/HAMAL-Linux/releases",
+		"https://github.com/i1k3r/HAMAL-Linux/releases/tag/v0.8.5",
+	}
+	invalid := []string{
+		"",
+		"http://github.com/i1k3r/HAMAL-Linux/releases/tag/v0.8.5",
+		"https://github.com/i1k3r/HAMAL-Linux/releases.evil.example/x",
+		"https://evil.example/i1k3r/HAMAL-Linux/releases",
+		"https://user@github.com/i1k3r/HAMAL-Linux/releases",
+		"https://github.com/someone/else/releases",
+		"file:///etc/passwd",
+	}
+	for _, u := range valid {
+		if !IsReleasePageURL(u) {
+			t.Errorf("IsReleasePageURL(%q) = false, want true", u)
+		}
+	}
+	for _, u := range invalid {
+		if IsReleasePageURL(u) {
+			t.Errorf("IsReleasePageURL(%q) = true, want false", u)
+		}
+	}
+	// Without a Wails context nothing is opened, but an invalid URL is refused before that.
+	if ok, msg := NewApp().ApplyUpdate("https://evil.example/"); ok || msg != "Not a HAMAL-Linux release page." {
+		t.Fatalf("ApplyUpdate accepted a non-release URL: (%v, %q)", ok, msg)
 	}
 }

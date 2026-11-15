@@ -76,7 +76,11 @@ func (a *App) startup(ctx context.Context) {
 }
 
 // checkUpdatesBackground checks GitHub releases silently and notifies frontend if an update exists.
+// Snap installs skip it: snapd refreshes them from the Snap Store.
 func (a *App) checkUpdatesBackground() {
+	if IsSnapInstall() {
+		return
+	}
 	time.Sleep(2 * time.Second)
 	if a.ctx == nil {
 		return
@@ -336,8 +340,18 @@ func (a *App) GetAppVersion() string {
 	return AppVersion
 }
 
-// CheckForUpdates manually checks GitHub releases for a newer version.
+// IsSnapPackage reports whether HAMAL runs as an installed snap, whose updates arrive through
+// the Snap Store.
+func (a *App) IsSnapPackage() bool {
+	return IsSnapInstall()
+}
+
+// CheckForUpdates manually checks GitHub releases for a newer version. Snap installs are updated
+// by the Snap Store, so for them it reports no update without contacting GitHub.
 func (a *App) CheckForUpdates() UpdateInfo {
+	if IsSnapInstall() {
+		return UpdateInfo{Available: false, CurrentVersion: AppVersion}
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -348,10 +362,17 @@ func (a *App) CheckForUpdates() UpdateInfo {
 	return info
 }
 
-// ApplyUpdate handles the update action on Linux by directing the user to the GitHub release page.
-func (a *App) ApplyUpdate(assetURL string) (bool, string) {
-	if assetURL != "" && a.ctx != nil {
-		runtime.BrowserOpenURL(a.ctx, assetURL)
+// ApplyUpdate opens the GitHub release page for plain binary installs. It never downloads or
+// replaces the executable. Snap installs are updated by the Snap Store, so it does nothing there.
+func (a *App) ApplyUpdate(releaseURL string) (bool, string) {
+	if IsSnapInstall() {
+		return false, "HAMAL was installed from the Snap Store. Updates arrive automatically."
+	}
+	if !IsReleasePageURL(releaseURL) {
+		return false, "Not a HAMAL-Linux release page."
+	}
+	if a.ctx != nil {
+		runtime.BrowserOpenURL(a.ctx, releaseURL)
 	}
 	return false, "Please download the updated package from the GitHub release page."
 }

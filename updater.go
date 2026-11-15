@@ -21,7 +21,26 @@ const (
 
 	// ExpectedAssetNamePrefix is the release asset prefix for Linux builds.
 	ExpectedAssetNamePrefix = "HAMAL-Linux"
+
+	// ReleasesPageURLPrefix is the only place the "Open release page" action may open.
+	ReleasesPageURLPrefix = "https://github.com/i1k3r/HAMAL-Linux/releases"
 )
+
+// IsSnapInstall reports whether HAMAL is running as an installed snap. snapd sets SNAP and
+// SNAP_NAME for every confined app. Snap installs are updated by snapd's automatic refresh from
+// the Snap Store, so they never check GitHub for releases and never show an update notice.
+func IsSnapInstall() bool {
+	return os.Getenv("SNAP") != "" && os.Getenv("SNAP_NAME") != ""
+}
+
+// IsReleasePageURL reports whether rawURL is an https page under the HAMAL-Linux GitHub releases.
+func IsReleasePageURL(rawURL string) bool {
+	u, err := url.Parse(rawURL)
+	if err != nil || u.Scheme != "https" || u.Host != "github.com" || u.User != nil {
+		return false
+	}
+	return u.String() == ReleasesPageURLPrefix || strings.HasPrefix(u.String(), ReleasesPageURLPrefix+"/")
+}
 
 // GitHubAsset represents a single asset attached to a GitHub release.
 type GitHubAsset struct {

@@ -7,8 +7,14 @@ import (
 	"strings"
 )
 
-// AppVersion is the centralized authoritative application version for HAMAL-Linux.
-var AppVersion = "v0.8.4"
+// AppVersion is the application version. The VERSION file at the repository root is the single
+// source of truth; release builds inject it at link time:
+//
+//	go build -ldflags "-X main.AppVersion=v$(cat VERSION)"
+//
+// scripts/build.sh and snap/snapcraft.yaml both do this, so the binary and the snap always carry
+// the same version. A build without the flag reports "dev", which never triggers an update notice.
+var AppVersion = "dev"
 
 // SemVersion represents a parsed semantic version (Major.Minor.Patch).
 type SemVersion struct {
