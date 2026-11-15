@@ -54,33 +54,66 @@ apps:
       WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: "1"
 
 parts:
+  # The HAMAL server module, pinned to the commit go.mod records
+  # (github.com/i1k3r/HAMAL v0.0.0-20260822183927-0072645cba81). It is only a build input:
+  # nothing from this part is installed into the snap.
+  hamal-server:
+    plugin: nil
+    source: https://github.com/i1k3r/HAMAL.git
+    source-type: git
+    source-commit: 0072645cba81dd4f2929f5c9e73dc901da1af3c3
+    override-build: |
+      true
+
   hamal:
+    after: [hamal-server]
     plugin: nil
     source: .
+    build-snaps:
+      - go/1.25/stable
+    build-packages:
+      - build-essential
+      - pkg-config
+      - libgtk-3-dev
+      - libwebkit2gtk-4.1-dev
     stage-packages:
       - libwebkit2gtk-4.1-0
+    build-environment:
+      - CGO_ENABLED: "1"
+      # Use the Go from build-snaps; never download another toolchain.
+      - GOTOOLCHAIN: local
     override-build: |
+      set -euo pipefail
+
       # VERSION is the single source of truth for the snap version and the binary's AppVersion.
       VERSION="$(tr -d '[:space:]' < VERSION)"
       craftctl set version="$VERSION"
 
-      # The binary must have been built from this VERSION by scripts/build.sh.
-      if ! grep -aq "v${VERSION}" HAMAL-Linux; then
-        echo "HAMAL-Linux was not built with version v${VERSION}; run scripts/build.sh first" >&2
+      # go.mod replaces github.com/i1k3r/HAMAL with ../HAMAL for local development and CI.
+      # Here, point it at the pinned hamal-server checkout instead. This edits only this
+      # part's build copy of go.mod, never the repository.
+      SERVER_SRC="$CRAFT_PARTS_DIRECTORY/hamal-server/src"
+      SERVER_COMMIT="$(git -C "$SERVER_SRC" rev-parse HEAD)"
+      if [ "$SERVER_COMMIT" != "0072645cba81dd4f2929f5c9e73dc901da1af3c3" ]; then
+        echo "hamal-server is at $SERVER_COMMIT, not the pinned commit" >&2
         exit 1
       fi
+      if ! grep -Eq "github.com/i1k3r/HAMAL v0\.0\.0-[0-9]{14}-${SERVER_COMMIT:0:12}\$" go.mod; then
+        echo "go.mod does not require github.com/i1k3r/HAMAL at ${SERVER_COMMIT:0:12}" >&2
+        exit 1
+      fi
+      go mod edit -replace "github.com/i1k3r/HAMAL=$SERVER_SRC"
+      go version
 
-      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin
-      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/applications
-      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/scalable/apps
-      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/512x512/apps
+      # Build from source; scripts/build.sh injects VERSION and checks the binary carries it.
+      mkdir -p "$CRAFT_PART_INSTALL/usr/bin"
+      scripts/build.sh "$CRAFT_PART_INSTALL/usr/bin/HAMAL-Linux"
 
-      # Install the verified Linux ELF binary
-      cp -f HAMAL-Linux $SNAPCRAFT_PART_INSTALL/usr/bin/HAMAL-Linux
-      chmod +x $SNAPCRAFT_PART_INSTALL/usr/bin/HAMAL-Linux
+      mkdir -p "$CRAFT_PART_INSTALL/usr/share/applications"
+      mkdir -p "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/scalable/apps"
+      mkdir -p "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/512x512/apps"
 
       # Install desktop launcher entry and icon
-      cp -f snap/gui/hamal.desktop $SNAPCRAFT_PART_INSTALL/usr/share/applications/hamal.desktop
-      cp -f snap/gui/hamal.svg $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/scalable/apps/hamal.svg
-      cp -f snap/gui/hamal.png $SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/512x512/apps/hamal.png
-
+      cp -f snap/gui/hamal.desktop "$CRAFT_PART_INSTALL/usr/share/applications/hamal.desktop"
+      cp -f snap/gui/hamal.svg "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/scalable/apps/hamal.svg"
+      cp -f snap/gui/hamal.png "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/512x512/apps/hamal.png"

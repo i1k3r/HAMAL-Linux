@@ -133,14 +133,13 @@ This builds `./HAMAL-Linux` with the Wails production tags and WebKitGTK 4.1 (`d
 
 ### Building the Snap
 
-Build the binary first, then pack it:
+The snap builds the binary from source, so no prebuilt binary or `../HAMAL` checkout is needed:
 
 ```bash
-scripts/build.sh
 snapcraft pack
 ```
 
-The `Build and test` GitHub Actions workflow does the same on Ubuntu 24.04 and uploads the `.snap` as a build artifact for review. It does not publish to the Snap Store.
+The `hamal-server` part pulls i1k3r/HAMAL at the commit `go.mod` records, and the `hamal` part points the `replace` directive at that checkout and runs `scripts/build.sh` with Go 1.25 from the `go` snap. Launchpad builds the same way. The `Build and test` GitHub Actions workflow builds the snap from a clean checkout and uploads the `.snap` as a build artifact for review. It does not publish to the Snap Store.
 
 Before publishing a snap, install it on a real Ubuntu machine and run the checks in [docs/snap-smoke-test.md](docs/snap-smoke-test.md).
 

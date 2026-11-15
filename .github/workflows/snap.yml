@@ -85,6 +85,8 @@ jobs:
 
   snap:
     name: Build snap for review
+    # Builds the snap from source like Launchpad does. The binary artifact from the test job is
+    # an independent check and is not used here.
     needs: test
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -92,14 +94,12 @@ jobs:
       - name: Checkout HAMAL-Linux
         uses: actions/checkout@v4
 
-      - name: Download binary
-        uses: actions/download-artifact@v4
-        with:
-          name: HAMAL-Linux-binary
-          path: .
-
-      - name: Make binary executable
-        run: chmod +x HAMAL-Linux
+      # Launchpad builds from a clean checkout, so the snap must not depend on the binary artifact.
+      - name: Check the checkout has no prebuilt binary
+        run: |
+          test ! -e HAMAL-Linux || { echo "HAMAL-Linux must not be in the source tree"; exit 1; }
+          PIN="$(sed -n 's/^ *source-commit: *//p' snap/snapcraft.yaml)"
+          [ "$PIN" = "$HAMAL_SERVER_REF" ] || { echo "snapcraft.yaml pins HAMAL at '$PIN', not $HAMAL_SERVER_REF"; exit 1; }
 
       - name: Build snap
         id: build
@@ -120,6 +120,9 @@ jobs:
           snap version
           unsquashfs -q -d snap-full "$SNAP_FILE"
           snap pack --check-skeleton snap-full
+          # The binary was built inside the snap build and must carry the version from VERSION.
+          grep -aq "v${VERSION}" snap-full/usr/bin/HAMAL-Linux || { echo "snap binary does not contain v${VERSION}"; exit 1; }
+          file snap-full/usr/bin/HAMAL-Linux
           case "$(basename "$SNAP_FILE")" in hamal_${VERSION}_*.snap) ;; *) echo "unexpected snap file name $SNAP_FILE"; exit 1;; esac
           sha256sum "$SNAP_FILE"
 

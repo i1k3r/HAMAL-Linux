@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the HAMAL Linux binary with the version from the VERSION file.
 #
-#   scripts/build.sh [output]      (default output: ./HAMAL-Linux, which snap/snapcraft.yaml packs)
+#   scripts/build.sh [output]      (default output: ./HAMAL-Linux; the snap build passes its own path)
 #
 # Needs Go, a C compiler, pkg-config and the GTK 3 / WebKitGTK 4.1 development packages
 # (Ubuntu/Debian: build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev).
