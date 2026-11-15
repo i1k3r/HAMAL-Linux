@@ -20,7 +20,7 @@
 
 **HAMAL for Linux** (HAMAL File Transfer) is the Linux desktop app for HAMAL. It runs the HAMAL server inside the app on your computer and opens temporary transfer rooms on your local network. Phones, tablets and other computers on the same network join a room from their browser and send files to, or receive files from, this computer. Files never go through a cloud service.
 
-### Features in v0.8.5
+### Features in v0.9.0
 
 - **Local network transfers**: Files travel over your Wi-Fi or Ethernet network to and from the HAMAL server running on this computer. Speed depends on your network and devices. Transfers use plain HTTP, so use HAMAL on networks you trust.
 - **No cloud storage**: Files that are on a room's table are stored on this computer, in HAMAL's data directory (see [Storage](#storage)), and nowhere else.

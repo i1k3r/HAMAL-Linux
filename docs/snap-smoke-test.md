@@ -10,8 +10,8 @@ You also need a phone (or a second computer) on the same Wi-Fi or Ethernet netwo
 # RUN_ID is the "Build and test" run for the commit under review.
 gh run download RUN_ID -R i1k3r/HAMAL-Linux -n hamal-snap -D hamal-snap
 cd hamal-snap
-ls                                   # expect hamal_0.8.5_amd64.snap
-sha256sum hamal_0.8.5_amd64.snap     # must match the hash printed by the "Check snap metadata" step
+ls                                   # expect hamal_0.9.0_amd64.snap
+sha256sum hamal_0.9.0_amd64.snap     # must match the hash printed by the "Check snap metadata" step
 ```
 
 Without `gh`, download the `hamal-snap` artifact from the run page and unzip it.
@@ -19,12 +19,12 @@ Without `gh`, download the `hamal-snap` artifact from the run page and unzip it.
 ## 2. Check the metadata and install
 
 ```bash
-snap info --verbose ./hamal_0.8.5_amd64.snap   # expect version 0.8.5, confinement strict, license Proprietary
+snap info --verbose ./hamal_0.9.0_amd64.snap   # expect version 0.9.0, confinement strict, license Proprietary
 
 snap list hamal && sudo snap remove --purge hamal   # only if a hamal snap is already installed
 
-sudo snap install --dangerous ./hamal_0.8.5_amd64.snap
-snap list hamal                      # expect Version 0.8.5, Notes "-" (not devmode or classic)
+sudo snap install --dangerous ./hamal_0.9.0_amd64.snap
+snap list hamal                      # expect Version 0.9.0, Notes "-" (not devmode or classic)
 ```
 
 `--dangerous` is needed because a locally built snap is not signed by the store. Such an install does not receive automatic refreshes; that path can only be checked after a store release.
@@ -76,7 +76,7 @@ Also start it once from the applications menu and check the HAMAL icon and the n
 | # | Action | Expected |
 |---|--------|----------|
 | 1 | Open the app | The Light Table home screen appears, in the desktop's theme and language |
-| 2 | Open About | Version `v0.8.5` and "Installed from the Snap Store. Updates arrive automatically." No update banner appears |
+| 2 | Open About | Version `v0.9.0` and "Installed from the Snap Store. Updates arrive automatically." No update banner appears |
 | 3 | Create a room with lifespan 5 minutes and PIN `4821` | The table, lamp and "PIN to join" appear |
 | 4 | Show QR, scan it with the phone, enter the PIN | The phone joins and appears as a seat on the table |
 | 5 | Upload a photo from the phone | It appears on the table. Download opens the system save dialog. Saving to `~/Downloads` shows Saved and the file opens |
