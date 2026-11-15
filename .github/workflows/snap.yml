@@ -21,6 +21,9 @@ env:
   # go.mod replaces github.com/i1k3r/HAMAL with ../HAMAL. This is the commit go.mod records
   # (v0.0.0-20261115113322-6fad72ec956e); the in-process server is not changed by this workflow.
   HAMAL_SERVER_REF: 6fad72ec956e8db57a0c2b705d84eaaf3a0bbafe
+  # The published Docker release that HAMAL Linux must match: ghcr.io/i1k3r/hamal:latest
+  # (= sha-6fad72e) on 2026-11-15, pinned by digest so the check cannot drift.
+  HAMAL_REFERENCE_IMAGE: ghcr.io/i1k3r/hamal@sha256:623bb9a66d8de1adbca100d174f3b7d1db05295f94a2d55bf12ffdad1cea512a
 
 jobs:
   test:
@@ -70,6 +73,31 @@ jobs:
       - name: go test
         working-directory: HAMAL-Linux
         run: go test -count=1 ./...
+
+      - name: Parity check against the Docker reference
+        working-directory: HAMAL-Linux
+        run: |
+          docker run -d --name hamal-reference -p 127.0.0.1:7700:7700 "$HAMAL_REFERENCE_IMAGE"
+          revision="$(docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.revision" }}' hamal-reference)"
+          echo "Reference image revision label: ${revision:-none}"
+          if [ -n "$revision" ] && [ "$revision" != "$HAMAL_SERVER_REF" ]; then
+            echo "The reference image was built from $revision, not $HAMAL_SERVER_REF"; exit 1
+          fi
+          for i in $(seq 30); do curl -fsS http://127.0.0.1:7700/readyz && break; sleep 1; done
+          HAMAL_REFERENCE_URL=http://127.0.0.1:7700 HAMAL_PARITY_REPORT="$PWD/parity-report.md" \
+            go test -count=1 -run TestParityWithReferenceServer -v . 2>&1 | grep -v ' level='
+          test "${PIPESTATUS[0]}" -eq 0
+          grep -q 'Result: \*\*no differences\*\*' parity-report.md
+          cat parity-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload parity report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-report
+          path: HAMAL-Linux/parity-report.md
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Build binary from VERSION
         working-directory: HAMAL-Linux
