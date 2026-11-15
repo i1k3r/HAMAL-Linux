@@ -4,27 +4,31 @@ title: HAMAL File Transfer
 adopt-info: hamal
 summary: Fast, private, temporary file transfer between devices
 description: |
-  HAMAL is a simple, privacy-focused file transfer application for sending files directly between devices on your local network through temporary rooms.
+  HAMAL is a simple, privacy-focused file transfer application for moving files between devices on your local network through temporary rooms.
 
-  Open a room on the desktop and lay files on the table. Other devices join by scanning the room's QR code with a browser, with no app or account, and files never pass through a cloud service. When the room's time is up, everything on it is deleted.
+  Open a room on the desktop and lay files on the table. Phones, tablets and other computers on the same network join by scanning the room's QR code with a browser, with no app or account. Files travel over your local network to and from this computer and never pass through a cloud service. When the room expires or you close it, its files are deleted.
 
   Features:
-  - Temporary rooms with a lamp that shows how long the room has left
+  - Temporary rooms from 5 minutes to 24 hours, with a lamp that shows how long the room has left
   - QR-code based device joining
-  - Optional PIN protection
+  - Optional PIN protection (4 to 8 characters)
   - Native file dialogs and drag and drop onto the table
   - Download → Saved state
   - Executable file warnings
   - Automatic room expiration
-  - Participant-controlled room closing
-  - Dark and light themes
+  - Dark and light themes that follow the desktop
   - 20 languages
   - Updates arrive automatically through the Snap Store
+
+  Transfers use plain HTTP on the local network, so use HAMAL on networks you trust.
 
 grade: stable
 confinement: strict
 base: core24
-license: MIT
+# LICENSE is the custom "HAMAL Source-Available Organizational Use License", which has no SPDX
+# identifier. "Proprietary" is the non-SPDX value snapd and the Snap Store accept for that case
+# (snapd spdx/licenses.go); snapcraft passes it through to meta/snap.yaml.
+license: Proprietary
 website: https://github.com/i1k3r/HAMAL-Linux
 issues: https://github.com/i1k3r/HAMAL-Linux/issues
 source-code: https://github.com/i1k3r/HAMAL-Linux

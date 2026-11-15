@@ -115,6 +115,11 @@ jobs:
           cat snap-root/meta/snap.yaml
           grep -qx "version: '\?${VERSION}'\?" snap-root/meta/snap.yaml || { echo "snap version is not ${VERSION}"; exit 1; }
           grep -qx "confinement: strict" snap-root/meta/snap.yaml || { echo "snap is not strictly confined"; exit 1; }
+          grep -qx "license: Proprietary" snap-root/meta/snap.yaml || { echo "snap license is not Proprietary"; exit 1; }
+          # Validate the packed metadata (including the license) with snapd's own validator, as the store does.
+          snap version
+          unsquashfs -q -d snap-full "$SNAP_FILE"
+          snap pack --check-skeleton snap-full
           case "$(basename "$SNAP_FILE")" in hamal_${VERSION}_*.snap) ;; *) echo "unexpected snap file name $SNAP_FILE"; exit 1;; esac
           sha256sum "$SNAP_FILE"
 

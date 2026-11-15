@@ -10,7 +10,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Linux%20x86--64-FCC624?logo=linux&logoColor=black)](https://github.com/i1k3r/HAMAL-Linux)
 [![Packaging](https://img.shields.io/badge/Snap%20Store-Available-E95420?logo=snapcraft&logoColor=white)](https://snapcraft.io/hamal)
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-Source--Available-lightgrey?style=flat-square)](LICENSE)
 
 </div>
 
@@ -18,22 +18,24 @@
 
 ## Overview
 
-**HAMAL-Linux** is the official desktop application for Linux systems powered by the Linux-native HAMAL engine. It allows you to create temporary transfer rooms on your local network, enabling phones, tablets, and computers to upload and download files at full wire speed without routing data through third-party servers.
+**HAMAL for Linux** (HAMAL File Transfer) is the Linux desktop app for HAMAL. It runs the HAMAL server inside the app on your computer and opens temporary transfer rooms on your local network. Phones, tablets and other computers on the same network join a room from their browser and send files to, or receive files from, this computer. Files never go through a cloud service.
 
-### Core Features
+### Features in v0.8.5
 
-- **Point-to-Point Local Transfers**: Files stream directly across your local network (Wi-Fi or Ethernet) at gigabit speeds with zero cloud relay.
-- **No Cloud Storage**: Data exists solely in memory and local temporary storage on your machine during the transfer lifecycle.
-- **QR-Based Room Joining**: Participants simply scan a high-contrast QR code or open a local LAN URL to connect immediately without app installation.
-- **Temporary Rooms & Lifespans**: Provision rooms with customizable time-to-live (5 minutes up to 24 hours).
-- **Automatic Expiration & Purge**: When a room expires or is closed, all stored files, buffers, and metadata are permanently and securely deleted.
-- **Optional Participant PIN**: Protect transfers with an optional 4–8 character PIN code to prevent unauthorized access on shared networks.
-- **Participant Close Room**: Connected mobile clients can close the room directly from their phone when the exchange is finished.
-- **Server-Authoritative Room Closing**: Coordinated 10-second countdown lifecycle ensuring graceful termination and state synchronization across creator and participants.
-- **Visual File Type Icons & Warnings**: Pixel-art SVG file-type badges and safety indicators for potentially executable binaries.
-- **20-Language Localization**: Full native translations for English, Turkish, Chinese, Hindi, Spanish, French, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Marathi, Telugu, Dutch, Italian, Korean, and Polish (including RTL layout support).
-- **System Theme & Language Detection**: Automatically inherits your desktop's dark/light color scheme and system locale.
-- **Responsible Use Gate**: Integrated safety and regulatory acknowledgement for transparent, secure usage.
+- **Local network transfers**: Files travel over your Wi-Fi or Ethernet network to and from the HAMAL server running on this computer. Speed depends on your network and devices. Transfers use plain HTTP, so use HAMAL on networks you trust.
+- **No cloud storage**: Files that are on a room's table are stored on this computer, in HAMAL's data directory (see [Storage](#storage)), and nowhere else.
+- **QR joining**: Other devices join by scanning the room's QR code or opening its local network address in a browser. They need no app or account.
+- **Temporary rooms**: Choose a room lifespan from 5 minutes to 24 hours. A lamp on the table shows how long the room has left.
+- **Automatic cleanup**: When a room expires or you close it, its files are deleted from this computer by HAMAL's background cleanup, which runs every minute.
+- **Optional PIN**: Protect a room with a PIN of 4 to 8 characters.
+- **Native file handling**: Add files with the system file dialog or by dragging them onto the table, and save received files with the system save dialog.
+- **Executable warnings**: Files that could be programs or scripts are marked before you save them.
+- **Limits**: Up to 100 files and 10 GiB per room, set by the bundled HAMAL server.
+- **20 languages**: English, Turkish, Chinese, Hindi, Spanish, French, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Marathi, Telugu, Dutch, Italian, Korean and Polish, with right-to-left layout for Arabic and Urdu.
+- **Desktop theme and language**: HAMAL follows your desktop's light or dark theme and its language.
+- **Updates**: Snap Store installs update automatically. Plain binary installs point you to the GitHub release page (see [Updates](#updates)).
+
+Only the room creator, on this computer, can close a room early.
 
 ---
 
@@ -46,9 +48,19 @@
 
 ## Installation & Quick Start
 
-### 1. Install Runtime Dependencies (Ubuntu / Debian)
+### Snap Store (recommended)
 
-HAMAL-Linux requires GTK3 and WebKit2GTK 4.1:
+```bash
+sudo snap install hamal
+```
+
+The snap is strictly confined and updates automatically through the Snap Store.
+
+### Release binary
+
+#### 1. Install runtime dependencies (Ubuntu / Debian)
+
+The binary needs GTK 3 and WebKitGTK 4.1:
 
 ```bash
 sudo apt update
@@ -65,14 +77,16 @@ sudo dnf install gtk3 webkit2gtk4.1
 sudo pacman -S gtk3 webkit2gtk-4.1
 ```
 
-### 2. Run the Application
+#### 2. Run the application
 
-Download the release binary, grant execute permissions, and run:
+Download the binary from the [release page](https://github.com/i1k3r/HAMAL-Linux/releases), make it executable and run it:
 
 ```bash
 chmod +x HAMAL-Linux
 ./HAMAL-Linux
 ```
+
+Other devices must be able to reach this computer on the port HAMAL picks at startup. If a firewall such as `ufw` is active, allow incoming connections from your local network.
 
 ---
 
@@ -128,6 +142,8 @@ snapcraft pack
 
 The `Build and test` GitHub Actions workflow does the same on Ubuntu 24.04 and uploads the `.snap` as a build artifact for review. It does not publish to the Snap Store.
 
+Before publishing a snap, install it on a real Ubuntu machine and run the checks in [docs/snap-smoke-test.md](docs/snap-smoke-test.md).
+
 ### Running Tests
 
 ```bash
@@ -143,17 +159,15 @@ node scripts/check-i18n.mjs
 
 ---
 
-## Storage & XDG Compliance
+## Storage
 
-HAMAL-Linux strictly complies with the XDG Base Directory Specification:
-- **Data Directory**: `$XDG_DATA_HOME/HAMAL` (default: `~/.local/share/HAMAL`)
-- **Config Directory**: `$XDG_CONFIG_HOME/HAMAL` (default: `~/.config/HAMAL`)
+HAMAL keeps room data (a small database and the files on room tables) in `$XDG_DATA_HOME/HAMAL`, which is `~/.local/share/HAMAL` by default. The snap keeps it inside the snap's own data area, `~/snap/hamal/current/.local/share/HAMAL`. Files are deleted when their room expires or is closed.
 
 ---
 
 ## Responsible Use
 
-HAMAL is intended solely for lawful, authorized peer-to-peer data synchronization and local file delivery. Users are responsible for ensuring that shared content complies with applicable local laws and network usage policies.
+HAMAL is intended solely for lawful, authorized local file transfer. Users are responsible for ensuring that shared content complies with applicable local laws and network usage policies.
 
 ---
 
