@@ -1,6 +1,6 @@
 name: hamal
 title: HAMAL
-version: "0.8.2"
+version: "0.8.5"
 summary: Fast, private, temporary file transfer between devices
 description: |
   HAMAL is a simple, privacy-focused file transfer application for sending files directly between devices through temporary transfer rooms.
