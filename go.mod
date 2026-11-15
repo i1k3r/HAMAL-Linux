@@ -3,7 +3,7 @@ module HAMAL-Linux
 go 1.25.0
 
 require (
-	github.com/i1k3r/HAMAL v0.0.0-20260822183927-0072645cba81
+	github.com/i1k3r/HAMAL v0.0.0-20261115113322-6fad72ec956e
 	github.com/wailsapp/wails/v2 v2.15.0
 )
 

@@ -24,6 +24,8 @@ export function GetSystemTheme():Promise<string>;
 
 export function Greet(arg1:string):Promise<string>;
 
+export function IsSnapPackage():Promise<boolean>;
+
 export function OpenFeedbackEmail():Promise<void>;
 
 export function ResetToSetup():Promise<main.HomeScreenState>;

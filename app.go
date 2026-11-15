@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -39,14 +38,21 @@ type App struct {
 	ctx     context.Context
 	backend *BackendController
 	updater *UpdaterController
+	uploads *uploadQueue
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{
+	a := &App{
 		backend: NewBackendController(),
 		updater: NewUpdaterController(),
 	}
+	a.uploads = newUploadQueue(a.backend, func(item UploadItem) {
+		if a.ctx != nil {
+			runtime.EventsEmit(a.ctx, "upload-update", item)
+		}
+	})
+	return a
 }
 
 // startup is called at application startup
@@ -65,7 +71,7 @@ func (a *App) startup(ctx context.Context) {
 		if len(paths) == 0 {
 			return
 		}
-		go a.dispatchUploadBatch(paths)
+		a.uploads.Add(paths)
 	})
 
 	// Start native background system theme monitor
@@ -76,7 +82,11 @@ func (a *App) startup(ctx context.Context) {
 }
 
 // checkUpdatesBackground checks GitHub releases silently and notifies frontend if an update exists.
+// Snap installs skip it: snapd refreshes them from the Snap Store.
 func (a *App) checkUpdatesBackground() {
+	if IsSnapInstall() {
+		return
+	}
 	time.Sleep(2 * time.Second)
 	if a.ctx == nil {
 		return
@@ -93,66 +103,7 @@ func (a *App) checkUpdatesBackground() {
 	runtime.EventsEmit(a.ctx, "update-available", info)
 }
 
-// dispatchUploadBatch processes a slice of file paths sequentially through the upload pipeline.
-func (a *App) dispatchUploadBatch(paths []string) {
-	total := len(paths)
-	if total == 0 {
-		return
-	}
-
-	successCount := 0
-	failedCount := 0
-	var lastError string
-
-	for i, filePath := range paths {
-		fname := filepath.Base(filePath)
-		runtime.EventsEmit(a.ctx, "upload-started", map[string]interface{}{
-			"filename": fname,
-			"index":    i + 1,
-			"total":    total,
-		})
-
-		res := a.backend.UploadFile(filePath, func(percent int) {
-			runtime.EventsEmit(a.ctx, "upload-progress", map[string]interface{}{
-				"filename": fname,
-				"percent":  percent,
-				"index":    i + 1,
-				"total":    total,
-			})
-		})
-
-		if res.Success {
-			successCount++
-			runtime.EventsEmit(a.ctx, "upload-file-complete", map[string]interface{}{
-				"fileId":        res.FileID,
-				"filename":      res.Filename,
-				"sizeBytes":     res.SizeBytes,
-				"sizeFormatted": formatBytes(res.SizeBytes),
-				"index":         i + 1,
-				"total":         total,
-			})
-		} else {
-			failedCount++
-			lastError = res.ErrorMessage
-			runtime.EventsEmit(a.ctx, "upload-file-error", map[string]interface{}{
-				"filename": fname,
-				"error":    res.ErrorMessage,
-				"index":    i + 1,
-				"total":    total,
-			})
-		}
-	}
-
-	runtime.EventsEmit(a.ctx, "upload-batch-complete", map[string]interface{}{
-		"total":        total,
-		"successCount": successCount,
-		"failedCount":  failedCount,
-		"lastError":    lastError,
-		"singleName":   filepath.Base(paths[0]),
-	})
-}
-
-// SelectAndUploadFiles opens a native file selection dialog and uploads selected files.
+// SelectAndUploadFiles opens a native file selection dialog and queues the selected files.
 func (a *App) SelectAndUploadFiles() {
 	paths, err := runtime.OpenMultipleFilesDialog(a.ctx, runtime.OpenDialogOptions{
 		Title: "Select Files to Send",
@@ -160,8 +111,7 @@ func (a *App) SelectAndUploadFiles() {
 	if err != nil || len(paths) == 0 {
 		return
 	}
-
-	go a.dispatchUploadBatch(paths)
+	a.uploads.Add(paths)
 }
 
 // domReady is called after front-end resources have been loaded
@@ -195,11 +145,14 @@ func (a *App) CreateRoomWithConfig(ttlSeconds int, pin string) (HomeScreenState,
 
 // CloseRoom closes the active room via the backend API.
 func (a *App) CloseRoom() HomeScreenState {
-	return a.backend.CloseRoom()
+	state := a.backend.CloseRoom()
+	a.uploads.RoomEnded()
+	return state
 }
 
 // ResetToSetup resets the home state to setup and invalidates old room session/polling.
 func (a *App) ResetToSetup() HomeScreenState {
+	a.uploads.Clear()
 	return a.backend.ResetToSetup()
 }
 
@@ -336,8 +289,18 @@ func (a *App) GetAppVersion() string {
 	return AppVersion
 }
 
-// CheckForUpdates manually checks GitHub releases for a newer version.
+// IsSnapPackage reports whether HAMAL runs as an installed snap, whose updates arrive through
+// the Snap Store.
+func (a *App) IsSnapPackage() bool {
+	return IsSnapInstall()
+}
+
+// CheckForUpdates manually checks GitHub releases for a newer version. Snap installs are updated
+// by the Snap Store, so for them it reports no update without contacting GitHub.
 func (a *App) CheckForUpdates() UpdateInfo {
+	if IsSnapInstall() {
+		return UpdateInfo{Available: false, CurrentVersion: AppVersion}
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -348,10 +311,17 @@ func (a *App) CheckForUpdates() UpdateInfo {
 	return info
 }
 
-// ApplyUpdate handles the update action on Linux by directing the user to the GitHub release page.
-func (a *App) ApplyUpdate(assetURL string) (bool, string) {
-	if assetURL != "" && a.ctx != nil {
-		runtime.BrowserOpenURL(a.ctx, assetURL)
+// ApplyUpdate opens the GitHub release page for plain binary installs. It never downloads or
+// replaces the executable. Snap installs are updated by the Snap Store, so it does nothing there.
+func (a *App) ApplyUpdate(releaseURL string) (bool, string) {
+	if IsSnapInstall() {
+		return false, "HAMAL was installed from the Snap Store. Updates arrive automatically."
+	}
+	if !IsReleasePageURL(releaseURL) {
+		return false, "Not a HAMAL-Linux release page."
+	}
+	if a.ctx != nil {
+		runtime.BrowserOpenURL(a.ctx, releaseURL)
 	}
 	return false, "Please download the updated package from the GitHub release page."
 }

@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/i1k3r/HAMAL/pkg/server"
@@ -58,6 +59,10 @@ type ActiveRoom struct {
 	ExpiresAt        time.Time
 	PinRequired      bool
 	QRSVG            string
+	// ClientSessionID marks this computer's notes as its own (X-Client-Session-ID).
+	ClientSessionID string
+	shareChecked    atomic.Bool
+	shareEnabled    atomic.Bool
 }
 
 // UploadResult contains the outcome of a single file upload attempt.
@@ -94,7 +99,10 @@ type BackendController struct {
 	pollCancel      context.CancelFunc
 	logger          *slog.Logger
 	httpClient      *http.Client
-	onFileReceived  func(file ReceivedFile)
+	// transferClient has no overall timeout: uploads and downloads of large files take as long as
+	// they take, and are stopped through their context instead.
+	transferClient *http.Client
+	onFileReceived func(file ReceivedFile)
 }
 
 // NewBackendController creates a new BackendController instance.
@@ -114,6 +122,7 @@ func NewBackendController() *BackendController {
 		httpClient: &http.Client{
 			Timeout: 60 * time.Second,
 		},
+		transferClient: &http.Client{},
 	}
 }
 
@@ -288,6 +297,15 @@ func (b *BackendController) CreateRoom() error {
 
 // CreateRoomWithConfig calls the HAMAL HTTP API to create a new room with custom TTL and optional PIN.
 func (b *BackendController) CreateRoomWithConfig(ttlSeconds int, pin string) (HomeScreenState, error) {
+	// Check the PIN first: the server rejects anything but 4 to 8 digits.
+	pin = strings.TrimSpace(pin)
+	if pin != "" {
+		if !isValidPIN(pin) {
+			err := errors.New("PIN must be 4 to 8 digits")
+			return b.GetHomeScreenState(), err
+		}
+	}
+
 	b.mu.RLock()
 	localURL := b.status.LocalURL
 	isServerRunning := b.status.Status == "running"
@@ -301,13 +319,6 @@ func (b *BackendController) CreateRoomWithConfig(ttlSeconds int, pin string) (Ho
 
 	if ttlSeconds <= 0 {
 		ttlSeconds = 3600
-	}
-	pin = strings.TrimSpace(pin)
-	if pin != "" {
-		if len(pin) < 4 || len(pin) > 8 {
-			err := errors.New("PIN must be between 4 and 8 characters")
-			return b.GetHomeScreenState(), err
-		}
 	}
 
 	// 1. Call POST /api/v1/rooms with configured TTL and optional PIN
@@ -383,6 +394,7 @@ func (b *BackendController) CreateRoomWithConfig(ttlSeconds int, pin string) (Ho
 		ExpiresAt:        expiresTime,
 		PinRequired:      roomData.PinRequired,
 		QRSVG:            string(svgBytes),
+		ClientSessionID:  newClientSessionID(),
 	}
 
 	b.mu.Lock()
@@ -480,7 +492,7 @@ func (b *BackendController) checkNewFiles() {
 		Status                  string `json:"status"`
 		CloseDeadline           string `json:"close_deadline,omitempty"`
 		ClosingRemainingSeconds int    `json:"closing_remaining_seconds,omitempty"`
-		Files []struct {
+		Files                   []struct {
 			FileID      string `json:"file_id"`
 			Filename    string `json:"filename"`
 			SizeBytes   int64  `json:"size_bytes"`
@@ -553,6 +565,11 @@ func (b *BackendController) checkNewFiles() {
 
 // UploadFile sends a single local file to the active HAMAL room via the HTTP API.
 func (b *BackendController) UploadFile(filePath string, progressCallback func(percent int)) UploadResult {
+	return b.UploadFileContext(context.Background(), filePath, filePath, progressCallback)
+}
+
+// UploadFileContext sends a local file under the given name. Cancelling ctx stops the upload.
+func (b *BackendController) UploadFileContext(ctx context.Context, filePath, name string, progressCallback func(percent int)) UploadResult {
 	b.uploadMu.Lock()
 	defer b.uploadMu.Unlock()
 
@@ -624,13 +641,13 @@ func (b *BackendController) UploadFile(filePath string, progressCallback func(pe
 	pr, pw := io.Pipe()
 	multipartWriter := multipart.NewWriter(pw)
 
-	filename := filepath.Base(filePath)
+	filename := filepath.Base(name)
 	totalSize := fi.Size()
 
 	uploadURL := fmt.Sprintf("%s/api/v1/rooms/%s/files", localURL, active.CreatorToken)
 	b.logger.Info("Starting file upload", "filename", filename, "size_bytes", totalSize, "upload_url", uploadURL)
 
-	req, err := http.NewRequest(http.MethodPost, uploadURL, pr)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, uploadURL, pr)
 	if err != nil {
 		_ = pr.Close()
 		_ = pw.Close()
@@ -684,9 +701,12 @@ func (b *BackendController) UploadFile(filePath string, progressCallback func(pe
 		_ = pw.CloseWithError(err)
 	}()
 
-	resp, err := b.httpClient.Do(req)
+	resp, err := b.transfer().Do(req)
 	if err != nil {
 		_ = pr.Close()
+		if ctx.Err() != nil {
+			return UploadResult{Success: false, ErrorMessage: "cancelled"}
+		}
 		b.logger.Error("UploadFile: HTTP Do error", "error", err)
 		return UploadResult{
 			Success:      false,
@@ -777,6 +797,19 @@ func (b *BackendController) UploadFiles(filePaths []string, progressCallback fun
 
 // DownloadFileToPath downloads a file from the active room directly to the specified destination path.
 func (b *BackendController) DownloadFileToPath(fileID, targetPath string) error {
+	return b.DownloadFileToPathContext(context.Background(), fileID, targetPath)
+}
+
+func (b *BackendController) transfer() *http.Client {
+	if b.transferClient != nil {
+		return b.transferClient
+	}
+	return http.DefaultClient
+}
+
+// DownloadFileToPathContext downloads a file to targetPath. The file is written next to the target
+// first and renamed when complete, so a failed download leaves nothing half-written behind.
+func (b *BackendController) DownloadFileToPathContext(ctx context.Context, fileID, targetPath string) error {
 	b.mu.RLock()
 	active := b.activeRoom
 	localURL := b.status.LocalURL
@@ -789,7 +822,11 @@ func (b *BackendController) DownloadFileToPath(fileID, targetPath string) error 
 	downloadURL := fmt.Sprintf("%s/api/v1/rooms/%s/files/%s", localURL, active.CreatorToken, fileID)
 	b.logger.Info("Downloading file from room", "file_id", fileID, "target_path", targetPath, "download_url", downloadURL)
 
-	resp, err := b.httpClient.Get(downloadURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := b.transfer().Do(req)
 	if err != nil {
 		b.logger.Error("Download request failed", "file_id", fileID, "error", err)
 		return fmt.Errorf("download request failed: %w", err)
@@ -798,20 +835,31 @@ func (b *BackendController) DownloadFileToPath(fileID, targetPath string) error 
 
 	if resp.StatusCode != http.StatusOK {
 		b.logger.Error("Download server returned non-200", "file_id", fileID, "status_code", resp.StatusCode)
+		if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
+			return fmt.Errorf("the file is no longer in the room (HTTP %d)", resp.StatusCode)
+		}
 		return fmt.Errorf("download server returned HTTP %d", resp.StatusCode)
 	}
 
-	out, err := os.Create(targetPath)
+	out, err := os.CreateTemp(filepath.Dir(targetPath), "."+filepath.Base(targetPath)+".*.part")
 	if err != nil {
 		b.logger.Error("Failed to create destination file", "target_path", targetPath, "error", err)
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer out.Close()
-
+	partPath := out.Name()
 	_, err = io.Copy(out, resp.Body)
+	if cerr := out.Close(); err == nil {
+		err = cerr
+	}
 	if err != nil {
+		_ = os.Remove(partPath)
 		b.logger.Error("Failed to stream downloaded content to disk", "error", err)
 		return fmt.Errorf("failed to write file content: %w", err)
+	}
+	_ = os.Chmod(partPath, 0o644)
+	if err := os.Rename(partPath, targetPath); err != nil {
+		_ = os.Remove(partPath)
+		return fmt.Errorf("failed to write file: %w", err)
 	}
 
 	b.logger.Info("File successfully downloaded and saved to disk",
@@ -1017,4 +1065,18 @@ func detectLanIPv4() string {
 	}
 
 	return "127.0.0.1"
+}
+
+// isValidPIN reports whether pin is 4 to 8 ASCII digits, the rule the HAMAL
+// server enforces (room.ErrInvalidPIN).
+func isValidPIN(pin string) bool {
+	if len(pin) < 4 || len(pin) > 8 {
+		return false
+	}
+	for i := 0; i < len(pin); i++ {
+		if pin[i] < '0' || pin[i] > '9' {
+			return false
+		}
+	}
+	return true
 }
