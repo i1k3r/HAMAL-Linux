@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -39,14 +38,21 @@ type App struct {
 	ctx     context.Context
 	backend *BackendController
 	updater *UpdaterController
+	uploads *uploadQueue
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{
+	a := &App{
 		backend: NewBackendController(),
 		updater: NewUpdaterController(),
 	}
+	a.uploads = newUploadQueue(a.backend, func(item UploadItem) {
+		if a.ctx != nil {
+			runtime.EventsEmit(a.ctx, "upload-update", item)
+		}
+	})
+	return a
 }
 
 // startup is called at application startup
@@ -65,7 +71,7 @@ func (a *App) startup(ctx context.Context) {
 		if len(paths) == 0 {
 			return
 		}
-		go a.dispatchUploadBatch(paths)
+		a.uploads.Add(paths)
 	})
 
 	// Start native background system theme monitor
@@ -97,66 +103,7 @@ func (a *App) checkUpdatesBackground() {
 	runtime.EventsEmit(a.ctx, "update-available", info)
 }
 
-// dispatchUploadBatch processes a slice of file paths sequentially through the upload pipeline.
-func (a *App) dispatchUploadBatch(paths []string) {
-	total := len(paths)
-	if total == 0 {
-		return
-	}
-
-	successCount := 0
-	failedCount := 0
-	var lastError string
-
-	for i, filePath := range paths {
-		fname := filepath.Base(filePath)
-		runtime.EventsEmit(a.ctx, "upload-started", map[string]interface{}{
-			"filename": fname,
-			"index":    i + 1,
-			"total":    total,
-		})
-
-		res := a.backend.UploadFile(filePath, func(percent int) {
-			runtime.EventsEmit(a.ctx, "upload-progress", map[string]interface{}{
-				"filename": fname,
-				"percent":  percent,
-				"index":    i + 1,
-				"total":    total,
-			})
-		})
-
-		if res.Success {
-			successCount++
-			runtime.EventsEmit(a.ctx, "upload-file-complete", map[string]interface{}{
-				"fileId":        res.FileID,
-				"filename":      res.Filename,
-				"sizeBytes":     res.SizeBytes,
-				"sizeFormatted": formatBytes(res.SizeBytes),
-				"index":         i + 1,
-				"total":         total,
-			})
-		} else {
-			failedCount++
-			lastError = res.ErrorMessage
-			runtime.EventsEmit(a.ctx, "upload-file-error", map[string]interface{}{
-				"filename": fname,
-				"error":    res.ErrorMessage,
-				"index":    i + 1,
-				"total":    total,
-			})
-		}
-	}
-
-	runtime.EventsEmit(a.ctx, "upload-batch-complete", map[string]interface{}{
-		"total":        total,
-		"successCount": successCount,
-		"failedCount":  failedCount,
-		"lastError":    lastError,
-		"singleName":   filepath.Base(paths[0]),
-	})
-}
-
-// SelectAndUploadFiles opens a native file selection dialog and uploads selected files.
+// SelectAndUploadFiles opens a native file selection dialog and queues the selected files.
 func (a *App) SelectAndUploadFiles() {
 	paths, err := runtime.OpenMultipleFilesDialog(a.ctx, runtime.OpenDialogOptions{
 		Title: "Select Files to Send",
@@ -164,8 +111,7 @@ func (a *App) SelectAndUploadFiles() {
 	if err != nil || len(paths) == 0 {
 		return
 	}
-
-	go a.dispatchUploadBatch(paths)
+	a.uploads.Add(paths)
 }
 
 // domReady is called after front-end resources have been loaded
@@ -199,11 +145,14 @@ func (a *App) CreateRoomWithConfig(ttlSeconds int, pin string) (HomeScreenState,
 
 // CloseRoom closes the active room via the backend API.
 func (a *App) CloseRoom() HomeScreenState {
-	return a.backend.CloseRoom()
+	state := a.backend.CloseRoom()
+	a.uploads.RoomEnded()
+	return state
 }
 
 // ResetToSetup resets the home state to setup and invalidates old room session/polling.
 func (a *App) ResetToSetup() HomeScreenState {
+	a.uploads.Clear()
 	return a.backend.ResetToSetup()
 }
 

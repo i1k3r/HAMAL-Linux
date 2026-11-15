@@ -66,6 +66,10 @@ jobs:
           node scripts/check-i18n.mjs
           for f in frontend/src/*.js; do node --check "$f"; done
 
+      - name: Check the room CSS is the reference lighttable.css
+        working-directory: HAMAL-Linux
+        run: scripts/check-css-parity.sh ../HAMAL
+
       - name: go vet
         working-directory: HAMAL-Linux
         run: go vet ./...

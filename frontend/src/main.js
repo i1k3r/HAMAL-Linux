@@ -1,12 +1,12 @@
-// HAMAL Linux desktop UI (Light Table).
+// HAMAL Linux desktop UI (Light Table): app lifecycle, home page, lamp, QR, close, About, theme,
+// language and the update notice. The room itself (table, notes, viewer, toolbar, upload tray) is
+// in room.js.
 //
 // The look follows the Light Table design of the main HAMAL repository. Everything that talks to
-// Linux goes through the same Wails bindings and events as before: native open/save dialogs,
-// native file drop, the in-process transfer backend, system theme and locale detection.
+// Linux goes through Wails bindings and events: native open/save dialogs, native file drop, the
+// in-process transfer backend, system theme and locale detection.
 
 let currentStatus = "starting";
-const roomFilesMap = new Map();
-let fileOrderCounter = 0;
 let expiresAtTimestamp = null;
 let roomLifespanSeconds = 0;
 let countdownInterval = null;
@@ -14,21 +14,8 @@ let currentRoomPin = "";
 let currentPinRequired = false;
 let currentParticipantUrl = "";
 let closedByMe = false;
-const recentActivities = [];
-const connectedParticipantsMap = new Map();
 
 const TTL_OPTIONS = [300, 900, 1800, 3600, 21600, 43200, 86400];
-const EXECUTABLE_EXTENSIONS = [
-    "exe", "msi", "com", "scr", "bat", "cmd",
-    "ps1", "vbs", "sh",
-    "jar",
-    "apk", "aab",
-    "appimage", "deb", "rpm"
-];
-const VIDEO_EXTENSIONS = ["mp4", "mkv", "avi", "mov", "webm", "m4v", "wmv"];
-const ICON_WARN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
-const ICON_PLAY = '<svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="7 4 20 12 7 20 7 4"></polygon></svg>';
-
 function tr(key, params) {
     return typeof t === "function" ? t(key, params) : key;
 }
@@ -46,333 +33,6 @@ function show(el, visible) {
 }
 
 // --------------------------------------------------------------------------
-// Files: extension, kind, size
-// --------------------------------------------------------------------------
-function extOf(filename) {
-    const lower = (filename || "").toLowerCase();
-    for (const multi of ["tar.gz", "tar.bz2", "tar.xz", "tar.zst"]) {
-        if (lower.endsWith("." + multi)) return multi;
-    }
-    const i = lower.lastIndexOf(".");
-    return i > 0 && i < lower.length - 1 ? lower.slice(i + 1) : "";
-}
-
-function isPotentiallyExecutable(filename) {
-    return EXECUTABLE_EXTENSIONS.includes(extOf(filename));
-}
-
-function formatBytes(bytes) {
-    if (!bytes || bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB", "TB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
-}
-
-function clock(ts) {
-    try {
-        return new Date(ts).toLocaleTimeString(document.documentElement.lang || undefined, { hour: "2-digit", minute: "2-digit" });
-    } catch (e) {
-        return "";
-    }
-}
-
-function announce(msg) {
-    const live = $("live-polite");
-    if (live) live.textContent = msg;
-}
-
-// --------------------------------------------------------------------------
-// Room log and seats
-// --------------------------------------------------------------------------
-function addRecentActivity(text) {
-    recentActivities.unshift({ text, timestamp: Date.now() });
-    if (recentActivities.length > 8) {
-        recentActivities.pop();
-    }
-    renderActivityList();
-}
-
-function renderActivityList() {
-    const list = $("activity-list");
-    if (!list) return;
-    list.innerHTML = "";
-    if (recentActivities.length === 0) {
-        const li = document.createElement("li");
-        li.textContent = tr("lt.logEmpty");
-        list.appendChild(li);
-    } else {
-        recentActivities.forEach((act) => {
-            const li = document.createElement("li");
-            li.textContent = `${act.text}, ${clock(act.timestamp)}`;
-            list.appendChild(li);
-        });
-    }
-    const clearBtn = $("btn-clear-activity");
-    if (clearBtn) clearBtn.hidden = recentActivities.length === 0;
-}
-
-window.clearActivity = function () {
-    recentActivities.length = 0;
-    renderActivityList();
-};
-
-// The backend reports files from other devices, not who sent them, so a device takes a seat at
-// the table once it lays a file down.
-function registerParticipant(name, ip) {
-    if (!name) name = "Mobile Device";
-    connectedParticipantsMap.set(ip || name, {
-        name,
-        ip: ip || "LAN Peer",
-        lastSeen: Date.now()
-    });
-    renderParticipantList();
-}
-
-function renderParticipantList() {
-    const list = $("participant-list");
-    if (!list) return;
-    list.innerHTML = "";
-    let n = 0;
-    connectedParticipantsMap.forEach(() => {
-        n++;
-        const li = document.createElement("li");
-        li.className = "lt-seat";
-        li.textContent = n > 1 ? `${tr("lt.device")} ${n}` : tr("lt.device");
-        list.appendChild(li);
-    });
-}
-
-// --------------------------------------------------------------------------
-// The table: files as slips (and video tiles), newest first
-// --------------------------------------------------------------------------
-function buildFileItem(file) {
-    const li = document.createElement("li");
-    li.className = "lt-item file-row" + (file.isNew ? " is-new" : "");
-    li.dataset.fileId = file.fileId;
-    file.isNew = false;
-
-    const ext = extOf(file.filename);
-    const isVideo = VIDEO_EXTENSIONS.includes(ext);
-
-    const article = document.createElement("article");
-    if (isVideo) {
-        article.className = "lt-print";
-        const tile = document.createElement("div");
-        tile.className = "lt-print-media is-video";
-        tile.setAttribute("aria-hidden", "true");
-        tile.innerHTML = ICON_PLAY;
-        article.appendChild(tile);
-    } else {
-        article.className = "lt-slip";
-        const hole = document.createElement("span");
-        hole.className = "lt-slip-hole";
-        hole.setAttribute("aria-hidden", "true");
-        const extEl = document.createElement("span");
-        extEl.className = "lt-slip-ext";
-        extEl.setAttribute("aria-hidden", "true");
-        extEl.textContent = ext ? ext.toUpperCase() : "FILE";
-        article.appendChild(hole);
-        article.appendChild(extEl);
-    }
-
-    const foot = document.createElement("div");
-    foot.className = "lt-item-foot";
-
-    const names = document.createElement("div");
-    names.className = "lt-item-names";
-    const nameEl = document.createElement("h3");
-    nameEl.className = "lt-item-name";
-    nameEl.title = file.filename;
-    nameEl.dir = "auto";
-    nameEl.textContent = file.filename;
-    const meta = document.createElement("span");
-    meta.className = "lt-item-meta";
-    meta.textContent = [file.sizeFormatted || formatBytes(file.sizeBytes), clock(file.timestamp)].filter(Boolean).join(" · ");
-    names.appendChild(nameEl);
-    names.appendChild(meta);
-    foot.appendChild(names);
-
-    const actions = document.createElement("div");
-    actions.className = "lt-actions";
-
-    if (file.direction === "outbound") {
-        const sent = document.createElement("span");
-        sent.className = "lt-sent";
-        sent.textContent = tr("lt.sent");
-        actions.appendChild(sent);
-    } else {
-        if (isPotentiallyExecutable(file.filename)) {
-            const warnText = tr("files.executableWarning");
-            const warn = document.createElement("span");
-            warn.className = "lt-warn-mark badge-exec-warning";
-            warn.tabIndex = 0;
-            warn.setAttribute("role", "note");
-            warn.setAttribute("aria-label", warnText);
-            warn.title = warnText;
-            warn.innerHTML = ICON_WARN;
-            actions.appendChild(warn);
-        }
-
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.id = `btn-download-${file.fileId}`;
-        if (file.saving) {
-            btn.className = "lt-ink-btn btn-download";
-            btn.textContent = tr("lt.saving");
-            btn.disabled = true;
-        } else if (file.saved) {
-            btn.className = "lt-ink-btn is-done btn-saved";
-            btn.textContent = tr("lt.saved");
-            btn.title = file.savedPath || "";
-            btn.onclick = () => downloadFile(file.fileId, file.filename);
-        } else {
-            btn.className = "lt-ink-btn btn-download";
-            btn.textContent = file.saveError ? tr("lt.retrySave") : tr("lt.save");
-            btn.setAttribute("aria-label", `${tr("lt.save")}: ${file.filename}`);
-            btn.onclick = () => downloadFile(file.fileId, file.filename);
-        }
-        actions.appendChild(btn);
-
-        if (file.saveError) {
-            const err = document.createElement("span");
-            err.className = "lt-save-error";
-            err.setAttribute("role", "alert");
-            err.textContent = file.saveError;
-            foot.appendChild(actions);
-            foot.appendChild(err);
-            article.appendChild(foot);
-            li.appendChild(article);
-            return li;
-        }
-    }
-
-    foot.appendChild(actions);
-    article.appendChild(foot);
-    li.appendChild(article);
-    return li;
-}
-
-function renderRoomFilesList() {
-    const list = $("file-list");
-    const empty = $("table-empty");
-    if (!list) return;
-
-    const files = Array.from(roomFilesMap.values()).sort((a, b) => b.order - a.order);
-    list.innerHTML = "";
-    files.forEach((file) => list.appendChild(buildFileItem(file)));
-    list.hidden = files.length === 0;
-    if (empty) empty.hidden = files.length !== 0;
-}
-
-window.downloadFile = function (fileId, filename) {
-    const app = wailsApp();
-    const file = roomFilesMap.get(fileId);
-    if (!app || !file) return;
-
-    file.saving = true;
-    file.saveError = "";
-    renderRoomFilesList();
-
-    app.DownloadFile(fileId, filename)
-        .then((res) => {
-            file.saving = false;
-            if (res && res.success) {
-                file.saved = true;
-                file.savedPath = res.savedPath || "";
-                addRecentActivity(tr("lt.logSaved", { name: filename }));
-            } else if (res && res.errorMessage) {
-                file.saveError = res.errorMessage;
-                console.error("Save failed:", res.errorMessage);
-            }
-            renderRoomFilesList();
-        })
-        .catch((err) => {
-            file.saving = false;
-            file.saveError = String(err);
-            console.error("Download error:", err);
-            renderRoomFilesList();
-        });
-};
-
-window.openFilePicker = function () {
-    if (currentStatus !== "ready") return;
-    const app = wailsApp();
-    if (app) app.SelectAndUploadFiles();
-};
-
-// --------------------------------------------------------------------------
-// Upload tray (events from the native upload pipeline)
-// --------------------------------------------------------------------------
-const trayRows = new Map();
-let trayHideTimeout = null;
-
-// Rows are keyed by the file's position in the batch; a new batch starts at index 1.
-function trayRow(data) {
-    const key = String(data.index);
-    let row = trayRows.get(key);
-    if (!row) {
-        const li = document.createElement("li");
-        li.className = "lt-up is-sending";
-        const name = document.createElement("span");
-        name.className = "lt-up-name";
-        name.textContent = data.filename;
-        const status = document.createElement("span");
-        status.className = "lt-up-status";
-        const bar = document.createElement("span");
-        bar.className = "lt-up-bar";
-        li.appendChild(name);
-        li.appendChild(status);
-        li.appendChild(bar);
-        $("tray-list").appendChild(li);
-        row = { li, status, bar };
-        trayRows.set(key, row);
-    }
-    return row;
-}
-
-function openTray() {
-    if (trayHideTimeout) {
-        clearTimeout(trayHideTimeout);
-        trayHideTimeout = null;
-    }
-    const tray = $("upload-tray");
-    if (tray && tray.hidden) {
-        trayRows.clear();
-        $("tray-list").innerHTML = "";
-        tray.hidden = false;
-    }
-}
-
-function setTraySummary(text) {
-    const summary = $("tray-summary");
-    if (summary) summary.textContent = text;
-}
-
-function closeTraySoon(delay) {
-    if (trayHideTimeout) clearTimeout(trayHideTimeout);
-    trayHideTimeout = setTimeout(() => {
-        const tray = $("upload-tray");
-        if (tray) tray.hidden = true;
-        trayRows.clear();
-        trayHideTimeout = null;
-    }, delay);
-}
-
-function onUploadProgress(data, percent) {
-    openTray();
-    if (data.index === 1 && percent === 0) {
-        trayRows.clear();
-        $("tray-list").innerHTML = "";
-    }
-    const row = trayRow(data);
-    row.li.className = "lt-up is-sending";
-    row.status.textContent = tr("lt.upSending", { percent: percent || 0 });
-    row.bar.style.width = (percent || 0) + "%";
-    setTraySummary(tr("lt.traySending", { current: data.index, total: data.total }));
-}
-
-// --------------------------------------------------------------------------
 // Dialogs
 // --------------------------------------------------------------------------
 function hideAllDialogs() {
@@ -382,12 +42,35 @@ function hideAllDialogs() {
     if (qr) qr.hidden = true;
 }
 
+// True while one of the dialogs above is open (room.js keeps its own dialogs).
+window.mainDialogOpen = function () {
+    const qr = $("modal-qr");
+    const visible = (id) => {
+        const el = $(id);
+        return Boolean(el) && !el.classList.contains("hidden");
+    };
+    return Boolean(qr && !qr.hidden) || visible("modal-close-confirm") || visible("modal-about");
+};
+
+function announce(msg) {
+    const live = $("live-polite");
+    if (live) live.textContent = msg;
+}
+
+window.openFilePicker = function () {
+    if (currentStatus !== "ready") return;
+    const app = wailsApp();
+    if (app) app.SelectAndUploadFiles();
+};
+
 window.closeRoom = function () {
     window.openCloseConfirmModal();
 };
 
 window.openCloseConfirmModal = function () {
     hideAllDialogs();
+    const err = $("close-error");
+    if (err) err.hidden = true;
     show($("modal-close-confirm"), true);
     const btn = $("confirm-close-btn");
     if (btn) btn.focus();
@@ -426,22 +109,43 @@ window.copyParticipantUrl = function () {
     const toast = $("copy-toast");
     if (!input || !input.value) return;
 
-    const done = () => {
-        if (toast) {
-            toast.classList.add("show");
-            setTimeout(() => toast.classList.remove("show"), 2000);
-        }
-    };
-    const fallback = () => {
-        input.select();
-        document.execCommand("copy");
-        done();
-    };
+    copyText(input.value).then((ok) => {
+        if (!toast) return;
+        toast.textContent = ok ? tr("lt.copied") : tr("room.copyAddressFailed");
+        toast.classList.toggle("is-fail", !ok);
+        if (!ok) input.select();
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 2500);
+    });
+};
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(input.value).then(done).catch(fallback);
-    } else {
-        fallback();
+// Copies text: the Wails clipboard first (the webview's own clipboard API needs a secure origin),
+// then the browser's. Resolves true only when a copy was confirmed.
+window.copyText = async function (text) {
+    if (window.runtime && typeof window.runtime.ClipboardSetText === "function") {
+        try {
+            if (await window.runtime.ClipboardSetText(text)) return true;
+        } catch (e) { /* fall through */ }
+    }
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (e) { /* fall through */ }
+    }
+    try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand && document.execCommand("copy") === true;
+        ta.remove();
+        return ok;
+    } catch (e) {
+        return false;
     }
 };
 
@@ -458,13 +162,7 @@ window.togglePinVisibility = function () {
 // Room lifecycle
 // --------------------------------------------------------------------------
 function resetRoomUI() {
-    roomFilesMap.clear();
-    fileOrderCounter = 0;
-    recentActivities.length = 0;
-    connectedParticipantsMap.clear();
-    renderRoomFilesList();
-    renderActivityList();
-    renderParticipantList();
+    if (window.HamalRoom) window.HamalRoom.reset();
     const banner = $("expiry-banner");
     if (banner) banner.hidden = true;
 }
@@ -478,18 +176,35 @@ function stopCountdown() {
 }
 
 window.confirmCloseRoom = function () {
-    hideAllDialogs();
-    closedByMe = true;
     const app = wailsApp();
-    if (app) {
-        app.CloseRoom()
-            .then((state) => {
-                renderState(state);
-            })
-            .catch((err) => {
-                console.error("Failed to close room:", err);
-            });
+    const btn = $("confirm-close-btn");
+    const err = $("close-error");
+    if (!app) return;
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = tr("room.closing");
     }
+    if (err) err.hidden = true;
+    closedByMe = true;
+    app.CloseRoom()
+        .then((state) => {
+            hideAllDialogs();
+            renderState(state);
+        })
+        .catch((e) => {
+            closedByMe = false;
+            console.error("Failed to close room:", e);
+            if (err) {
+                err.textContent = tr("room.closeFailed");
+                err.hidden = false;
+            }
+        })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = tr("lt.closeRoom");
+            }
+        });
 };
 
 window.retryConnection = function () {
@@ -578,7 +293,6 @@ window.submitCreateRoomForm = function (e) {
             .then((state) => {
                 setBusy(false);
                 if (pinEl) pinEl.value = "";
-                addRecentActivity(tr("lt.logOpened"));
                 renderState(state);
             })
             .catch((err) => {
@@ -694,8 +408,12 @@ function renderPin() {
     if (qrLeadPin) qrLeadPin.hidden = !hasPin;
 }
 
+let currentRoomOpen = false;
+
 function renderState(state) {
+    const previous = currentStatus;
     currentStatus = state.status;
+    currentRoomOpen = previous === "ready" || previous === "closing";
 
     if (state.status === "setup") {
         stopCountdown();
@@ -735,13 +453,21 @@ function renderState(state) {
                 countdownInterval = setInterval(updateCountdown, 1000);
             }
         }
-        if (roomFilesMap.size === 0) renderRoomFilesList();
+        if (window.HamalRoom) window.HamalRoom.enter();
     } else if (state.status === "closed" || state.status === "stopped") {
+        const wasOpen = currentRoomOpen;
         stopCountdown();
         hideAllDialogs();
+        const hadOpenUploads = window.HamalRoom ? window.HamalRoom.leave() : false;
         showView("view-closed");
         const title = $("inactive-title");
-        if (title) title.textContent = tr(closedByMe ? "lt.closedTitle" : "lt.endedTitle");
+        if (title) {
+            title.textContent = tr(closedByMe ? "lt.closedTitle" : "lt.endedTitle");
+            if (wasOpen) title.focus();
+        }
+        const up = $("inactive-uploads");
+        if (up) up.hidden = !hadOpenUploads;
+        announce(title ? title.textContent : "");
     } else if (state.status === "error") {
         stopCountdown();
         hideAllDialogs();
@@ -804,9 +530,7 @@ function initTheme() {
 // Language
 // --------------------------------------------------------------------------
 function refreshDynamicTexts() {
-    renderRoomFilesList();
-    renderActivityList();
-    renderParticipantList();
+    if (window.HamalRoom) window.HamalRoom.refreshTexts();
     renderPin();
     updateCountdown();
     refreshUpdateTexts();
@@ -874,6 +598,13 @@ window.addEventListener("keydown", (e) => {
     }
 });
 
+// The room's own snapshot can see the room end before the next state poll does.
+window.roomEndedFromSnapshot = function () {
+    if (currentStatus === "ready" || currentStatus === "closing") {
+        renderState({ status: "closed" });
+    }
+};
+
 // --------------------------------------------------------------------------
 // Wails event subscriptions
 // --------------------------------------------------------------------------
@@ -881,8 +612,6 @@ function initWailsListeners() {
     initTheme();
     initLanguage();
     initVersionDisplay();
-    renderRoomFilesList();
-    renderActivityList();
 
     if (!window.runtime) return;
 
@@ -892,86 +621,6 @@ function initWailsListeners() {
 
     window.runtime.EventsOn("system-theme-changed", (theme) => {
         applySystemTheme(theme);
-    });
-
-    window.runtime.EventsOn("upload-started", (data) => {
-        setDragOver(false);
-        onUploadProgress(data, 0);
-    });
-
-    window.runtime.EventsOn("upload-progress", (data) => {
-        onUploadProgress(data, data.percent || 0);
-    });
-
-    window.runtime.EventsOn("upload-file-complete", (data) => {
-        if (data && data.fileId) {
-            const row = trayRow({ index: data.index, filename: data.filename });
-            row.li.className = "lt-up is-sent";
-            row.status.textContent = tr("lt.upSent");
-            row.bar.style.width = "100%";
-
-            fileOrderCounter++;
-            roomFilesMap.set(data.fileId, {
-                fileId: data.fileId,
-                filename: data.filename,
-                sizeFormatted: data.sizeFormatted || "",
-                sizeBytes: data.sizeBytes || 0,
-                direction: "outbound",
-                saved: false,
-                order: fileOrderCounter,
-                timestamp: Date.now(),
-                isNew: true
-            });
-            addRecentActivity(tr("lt.logLaid", { name: data.filename }));
-            renderRoomFilesList();
-        }
-    });
-
-    window.runtime.EventsOn("upload-file-error", (data) => {
-        if (!data) return;
-        const row = trayRow(data);
-        row.li.className = "lt-up is-failed";
-        row.status.textContent = tr("lt.upFailed", { error: data.error || "" });
-    });
-
-    window.runtime.EventsOn("upload-batch-complete", (data) => {
-        if (data.failedCount === 0) {
-            setTraySummary(data.total === 1 ? tr("lt.upSent") : tr("upload.allFilesSent", { total: data.total }));
-            closeTraySoon(4500);
-        } else {
-            setTraySummary(tr("upload.summary", { success: data.successCount, failed: data.failedCount }));
-            closeTraySoon(12000);
-        }
-        announce($("tray-summary").textContent);
-    });
-
-    window.runtime.EventsOn("file-received", (data) => {
-        if (data && data.fileId) {
-            const existing = roomFilesMap.get(data.fileId);
-            if (existing) {
-                roomFilesMap.set(data.fileId, {
-                    ...existing,
-                    ...data,
-                    direction: "inbound",
-                    saved: existing.saved || false,
-                    order: existing.order,
-                });
-            } else {
-                fileOrderCounter++;
-                roomFilesMap.set(data.fileId, {
-                    ...data,
-                    direction: "inbound",
-                    saved: false,
-                    order: fileOrderCounter,
-                    timestamp: Date.now(),
-                    isNew: true
-                });
-            }
-            registerParticipant("Mobile Participant", "LAN Peer");
-            addRecentActivity(tr("lt.logArrived", { name: data.filename }));
-            renderRoomFilesList();
-            announce(tr("lt.logArrived", { name: data.filename }));
-        }
     });
 
     window.runtime.EventsOn("update-available", (info) => {

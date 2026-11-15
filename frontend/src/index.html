@@ -88,7 +88,8 @@ Lay files on the table.</h1>
     </div>
 </div>
 
-<!-- 3. Room: the light table -->
+<!-- 3. Room: the light table. Structure and ids follow the HAMAL creator page (creator.html and
+     lt_parts.html at 6fad72e); room.js renders the table. -->
 <div class="lt-view lt-frame hidden" id="view-ready">
     <header class="lt-top">
         <span class="lt-wordmark">hamal</span>
@@ -102,19 +103,30 @@ Lay files on the table.</h1>
             </div>
         </div>
         <span class="lt-pin-note" id="pin-display-box" hidden></span>
+        <span class="lt-capacity" id="capacity"></span>
         <span class="lt-spacer"></span>
         <div class="lt-top-actions">
-            <button type="button" class="lt-btn lt-btn-outline" id="show-qr-btn" onclick="openQRLightbox()" aria-haspopup="dialog" data-i18n="lt.showQr">Show QR</button>
+            <button type="button" class="lt-btn lt-btn-outline" id="show-qr-btn" onclick="openQRLightbox()" aria-haspopup="dialog" aria-keyshortcuts="Q" data-i18n="lt.showQr">Show QR</button>
             <button type="button" class="lt-btn lt-btn-quiet" id="close-room-btn" onclick="closeRoom()" aria-haspopup="dialog" data-i18n="lt.closeRoom">Close room</button>
-            <button type="button" class="lt-btn lt-btn-quiet" onclick="openAboutModal()" aria-haspopup="dialog" data-i18n="lt.about">About</button>
             <div class="lt-theme" role="group" aria-label="Theme">
-                <button type="button" class="theme-btn-light" onclick="setUserTheme('light')" title="Light theme" aria-label="Light theme">
+                <button type="button" class="theme-btn-light" id="theme-btn-light" onclick="setUserTheme('light')" title="Light theme" aria-label="Light theme">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="4.22" x2="19.78" y2="5.64"></line></svg>
                 </button>
-                <button type="button" class="theme-btn-dark active" onclick="setUserTheme('dark')" title="Dark theme" aria-label="Dark theme">
+                <button type="button" class="theme-btn-dark active" id="theme-btn-dark" onclick="setUserTheme('dark')" title="Dark theme" aria-label="Dark theme">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
             </div>
+        </div>
+        <button type="button" class="lt-menu-btn" id="room-menu-btn" aria-label="Room options" data-i18n-aria-label="room.menu" aria-expanded="false" aria-controls="room-menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+        </button>
+        <div class="lt-menu" id="room-menu" hidden>
+            <button type="button" data-menu="qr" data-i18n="lt.showQr">Show QR</button>
+            <button type="button" data-menu="copy" data-i18n="room.menuCopy">Copy link</button>
+            <button type="button" data-menu="theme" data-i18n="room.menuTheme">Switch frame light or dark</button>
+            <button type="button" data-menu="shortcuts" data-i18n="room.shortcuts">Keyboard shortcuts</button>
+            <button type="button" data-menu="about" data-i18n="lt.about">About</button>
+            <button type="button" data-menu="close" data-i18n="lt.closeRoom">Close room</button>
         </div>
     </header>
 
@@ -123,29 +135,101 @@ Lay files on the table.</h1>
         <span id="expiry-text"></span>
     </div>
 
+    <div class="lt-toolbar" id="toolbar">
+        <div class="lt-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <label for="search-input" class="lt-sr" data-i18n="room.find">Find a file or note</label>
+            <input type="search" id="search-input" placeholder="Find a file or note" data-i18n-placeholder="room.find" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="lt-chips" id="kind-chips" role="group" aria-label="Show" data-i18n-aria-label="room.show">
+            <button type="button" class="lt-chip" data-kind="all" aria-pressed="true"><span data-i18n="room.kindAll">All</span> <span class="lt-chip-count" id="count-all">0</span></button>
+            <button type="button" class="lt-chip" data-kind="image" aria-pressed="false"><span data-i18n="room.kindImages">Images</span> <span class="lt-chip-count" id="count-image">0</span></button>
+            <button type="button" class="lt-chip" data-kind="video" aria-pressed="false"><span data-i18n="room.kindVideo">Video</span> <span class="lt-chip-count" id="count-video">0</span></button>
+            <button type="button" class="lt-chip" data-kind="audio" aria-pressed="false"><span data-i18n="room.kindAudio">Audio</span> <span class="lt-chip-count" id="count-audio">0</span></button>
+            <button type="button" class="lt-chip" data-kind="document" aria-pressed="false"><span data-i18n="room.kindDocuments">Documents</span> <span class="lt-chip-count" id="count-document">0</span></button>
+            <button type="button" class="lt-chip" data-kind="archive" aria-pressed="false"><span data-i18n="room.kindArchives">Archives</span> <span class="lt-chip-count" id="count-archive">0</span></button>
+            <button type="button" class="lt-chip" data-kind="note" aria-pressed="false"><span data-i18n="room.kindNotes">Notes</span> <span class="lt-chip-count" id="text-count">0</span></button>
+            <button type="button" class="lt-chip" data-kind="other" aria-pressed="false"><span data-i18n="room.kindOther">Other</span> <span class="lt-chip-count" id="count-other">0</span></button>
+        </div>
+        <label for="kind-select" class="lt-sr" data-i18n="room.show">Show</label>
+        <select id="kind-select" class="lt-kind-select">
+            <option value="all" data-i18n="room.kindEverything">Everything</option>
+            <option value="image" data-i18n="room.kindImages">Images</option>
+            <option value="video" data-i18n="room.kindVideo">Video</option>
+            <option value="audio" data-i18n="room.kindAudio">Audio</option>
+            <option value="document" data-i18n="room.kindDocuments">Documents</option>
+            <option value="archive" data-i18n="room.kindArchives">Archives</option>
+            <option value="note" data-i18n="room.kindNotes">Notes</option>
+            <option value="other" data-i18n="room.kindOther">Other</option>
+        </select>
+        <span class="lt-spacer"></span>
+        <label for="sort-select" class="lt-sr" data-i18n="room.sort">Sort</label>
+        <select id="sort-select" class="lt-sort">
+            <option value="newest" data-i18n="room.sortNewest">Newest first</option>
+            <option value="name" data-i18n="room.sortName">Name A–Z</option>
+            <option value="size" data-i18n="room.sortSize">Largest first</option>
+        </select>
+        <div class="lt-viewswitch" role="group" aria-label="View" data-i18n-aria-label="room.viewMode">
+            <button type="button" id="view-table" aria-pressed="true" data-i18n="room.viewTable">Table</button>
+            <button type="button" id="view-list" aria-pressed="false" data-i18n="room.viewList">List</button>
+        </div>
+    </div>
+
     <main class="lt-table" id="dropzone" aria-labelledby="table-heading">
         <ul class="lt-seats" id="participant-list" aria-label="Devices at the table"></ul>
-        <div class="lt-table-scroll">
-            <h1 class="lt-sr" id="table-heading">HAMAL</h1>
-            <ul class="lt-grid" id="file-list" aria-label="Files on the table, newest first"></ul>
+        <div class="lt-table-scroll" id="table-scroll">
+            <span class="lt-sr"><span id="participant-count">0</span> <span data-i18n="room.devicesAtTable">devices at the table</span></span>
+            <h1 class="lt-sr" id="table-heading" tabindex="-1">HAMAL</h1>
+            <div class="lt-list-bar" id="list-bar" hidden>
+                <label class="lt-selall"><input type="checkbox" id="select-all"> <span data-i18n="room.selectAll">Select all files</span></label>
+                <button type="button" class="lt-ink-btn" id="save-selected-btn" disabled>Save selected (0)</button>
+                <span id="bulk-note" role="status" hidden></span>
+            </div>
+            <div class="lt-list-head" id="list-head" hidden aria-hidden="true">
+                <span></span><span data-i18n="room.colName">Name</span><span data-i18n="room.colKind">Kind</span><span data-i18n="room.colSize">Size</span><span data-i18n="room.colAdded">Added</span><span></span>
+            </div>
+            <ul class="lt-grid" id="file-list" aria-label="Files and notes, newest first" hidden></ul>
+            <p class="lt-no-match" id="no-match" hidden data-i18n="room.noMatch">Nothing on the table matches.</p>
             <div class="lt-empty" id="table-empty">
                 <h2 data-i18n="lt.emptyTitle">The table is empty.</h2>
-                <p data-i18n="lt.emptyText">Lay files on the table, or drop them anywhere here. Devices at the table can save them, and what they lay down appears here. Everything disappears when the room closes.</p>
+                <p data-i18n="room.emptyText">Lay files on the table or write a note. They appear on every device at the table, and disappear when the room closes.</p>
                 <div class="lt-empty-actions">
-                    <button type="button" class="lt-btn lt-btn-primary lt-btn-lg" onclick="openFilePicker()" data-i18n="lt.layFiles">Lay files on the table</button>
-                    <button type="button" class="lt-btn lt-btn-outline lt-btn-lg" onclick="openQRLightbox()" data-i18n="lt.inviteQr">Show QR to invite a device</button>
+                    <button type="button" class="lt-btn lt-btn-primary lt-btn-lg" id="empty-add-btn" onclick="openFilePicker()" data-i18n="lt.layFiles">Lay files on the table</button>
+                    <button type="button" class="lt-btn lt-btn-outline lt-btn-lg" id="empty-qr-btn" onclick="openQRLightbox()" data-i18n="lt.inviteQr">Show QR to invite a device</button>
                 </div>
             </div>
             <aside class="lt-log" aria-label="Room log">
                 <ol id="activity-list"></ol>
-                <button type="button" id="btn-clear-activity" onclick="clearActivity()" data-i18n="lt.clearLog" hidden>Clear log</button>
+                <button type="button" id="btn-clear-activity" data-i18n="lt.clearLog" hidden>Clear log</button>
             </aside>
         </div>
     </main>
 
-    <footer class="lt-dock">
+    <div class="lt-composer-backdrop" id="composer-backdrop" hidden></div>
+    <section class="lt-composer" id="composer" aria-label="Write a note" hidden>
+        <div class="lt-composer-card">
+            <label for="text-input" class="lt-sr" data-i18n="room.labelNote">Note</label>
+            <textarea id="text-input" rows="3" placeholder="Type or paste a note, a command, a link…" data-i18n-placeholder="room.notePlaceholder" spellcheck="false"></textarea>
+        </div>
+        <div class="lt-overlimit" id="text-overlimit" hidden>
+            <span id="text-overlimit-msg"></span>
+            <button type="button" class="lt-ink-btn" id="send-as-file-btn" data-i18n="room.sendAsFile">Send as .txt file</button>
+        </div>
+        <div class="lt-compose-error" id="text-compose-error" role="alert" hidden></div>
+        <div class="lt-composer-row">
+            <span class="lt-counter" id="text-size-counter">0 B / 64 KB</span>
+            <span class="lt-hint" id="composer-hint" data-i18n="room.composerHint">Enter sends. Shift+Enter adds a line.</span>
+            <span class="lt-spacer"></span>
+            <button type="button" class="lt-btn lt-btn-quiet" id="composer-cancel" data-i18n="room.close">Close</button>
+            <button type="button" class="lt-btn lt-btn-primary" id="send-text-btn"><span id="send-text-label" data-i18n="room.sendNote">Send note</span></button>
+        </div>
+    </section>
+
+    <footer class="lt-dock" id="dock">
         <button type="button" class="lt-btn lt-btn-primary lt-btn-lg" id="add-files-btn" onclick="openFilePicker()" data-i18n="lt.addFiles">Add files</button>
-        <span class="lt-hint" data-i18n="lt.dockHint">Drop files anywhere on the table.</span>
+        <button type="button" class="lt-btn lt-btn-outline lt-btn-lg" id="write-note-btn" aria-expanded="false" aria-controls="composer" data-i18n="room.writeNote">Write a note</button>
+        <span class="lt-hint" id="dock-hint" data-i18n="room.dockHint">Drop files anywhere on the table. Ctrl+V lays down a copied image.</span>
+        <span class="lt-spacer lt-dock-spacer"></span>
     </footer>
 </div>
 
@@ -154,8 +238,9 @@ Lay files on the table.</h1>
     <header class="lt-top"><span class="lt-wordmark">hamal</span></header>
     <div class="lt-gate-stage">
         <div class="lt-gate-card">
-            <h1 id="inactive-title" data-i18n="lt.endedTitle">This room has ended</h1>
-            <p data-i18n="lt.endedText">Files on it were deleted. Anything you already saved is still on this computer.</p>
+            <h1 id="inactive-title" tabindex="-1" data-i18n="lt.endedTitle">This room has ended</h1>
+            <p id="inactive-message" data-i18n="room.endedText">Files and notes on it were deleted. Anything you already saved is still on this computer.</p>
+            <p id="inactive-uploads" data-i18n="room.endedUploads" hidden>Files that were still sending did not reach the room.</p>
             <div><button type="button" class="lt-btn lt-btn-primary" onclick="showRoomCreationScreen()" data-i18n="lt.newRoom">Start a new room</button></div>
         </div>
     </div>
@@ -173,10 +258,11 @@ Lay files on the table.</h1>
     </div>
 </section>
 
-<!-- Upload tray (native upload pipeline progress) -->
+<!-- Upload tray (the native upload queue: cancel, retry, remove) -->
 <aside class="lt-tray" id="upload-tray" aria-label="Uploads" hidden>
     <div class="lt-tray-head">
         <span class="lt-tray-summary" id="tray-summary" role="status"></span>
+        <button type="button" class="lt-tray-toggle" id="tray-toggle" aria-expanded="true" aria-controls="tray-list" data-i18n="room.trayHide">Hide</button>
     </div>
     <ul class="lt-tray-list" id="tray-list"></ul>
 </aside>
@@ -216,6 +302,7 @@ Lay files on the table.</h1>
     </div>
     <div class="lt-qr-foot">
         <span id="qr-lamp"></span>
+        <span id="qr-seats"></span>
         <span class="lt-spacer"></span>
         <span data-i18n="lt.qrEsc">Esc or Done brings the table back</span>
     </div>
@@ -226,10 +313,78 @@ Lay files on the table.</h1>
     <div class="lt-sheet" onclick="event.stopPropagation()">
         <h2 id="close-title" data-i18n="lt.closeTitle">Close this room now?</h2>
         <p data-i18n="lt.closeText">Downloads stop at once for everyone, and everything on the table is deleted.</p>
+        <p class="lt-error" id="close-error" role="alert" hidden></p>
         <div class="lt-sheet-actions">
             <button type="button" class="lt-btn lt-btn-quiet" onclick="closeAllModals()" data-i18n="lt.cancel">Cancel</button>
             <button type="button" class="lt-btn lt-btn-danger" id="confirm-close-btn" onclick="confirmCloseRoom()" data-i18n="lt.closeRoom">Close room</button>
         </div>
+    </div>
+</div>
+
+<!-- Media and note viewer (the reference #file-preview-overlay) -->
+<div id="file-preview-overlay" class="lt-viewer hidden" role="dialog" aria-modal="true" aria-labelledby="preview-filename">
+    <div class="lt-viewer-head">
+        <span class="lt-viewer-count" id="viewer-count"></span>
+        <h2 class="lt-viewer-title" id="preview-filename"></h2>
+        <button type="button" class="lt-viewer-close" id="preview-close-btn" aria-label="Close viewer" data-i18n-aria-label="room.closeViewer" title="Esc">✕</button>
+    </div>
+    <div class="lt-viewer-body" id="preview-body"></div>
+    <div class="lt-viewer-note" id="viewer-note" role="status"></div>
+    <div class="lt-viewer-foot">
+        <button type="button" class="lt-btn lt-btn-quiet" id="viewer-prev" data-i18n="room.previous">Previous</button>
+        <button type="button" class="lt-btn lt-btn-primary" id="viewer-save" data-i18n="lt.save">Save</button>
+        <button type="button" class="lt-btn lt-btn-quiet" id="viewer-next" data-i18n="room.next">Next</button>
+    </div>
+</div>
+
+<!-- Keyboard shortcuts -->
+<div class="lt-overlay" id="shortcuts-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" hidden>
+    <div class="lt-sheet">
+        <h2 id="shortcuts-title" data-i18n="room.shortcuts">Keyboard shortcuts</h2>
+        <dl class="lt-kbd-list">
+            <dt><kbd>Q</kbd></dt><dd data-i18n="room.scQr">Show the QR code</dd>
+            <dt><kbd>/</kbd></dt><dd data-i18n="room.find">Find a file or note</dd>
+            <dt><kbd>N</kbd></dt><dd data-i18n="room.writeNote">Write a note</dd>
+            <dt><kbd>Ctrl</kbd> <kbd>V</kbd></dt><dd data-i18n="room.scPaste">Lay down a copied image</dd>
+            <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd data-i18n="room.scArrows">Previous and next in the viewer</dd>
+            <dt><kbd>S</kbd></dt><dd data-i18n="room.scSave">Save what the viewer shows</dd>
+            <dt><kbd>Esc</kbd></dt><dd data-i18n="room.scEsc">Close a dialog</dd>
+            <dt><kbd>?</kbd></dt><dd data-i18n="room.scHelp">This list</dd>
+        </dl>
+        <div class="lt-sheet-actions"><button type="button" class="lt-btn lt-btn-primary" id="shortcuts-close" data-i18n="lt.done">Done</button></div>
+    </div>
+</div>
+
+<!-- Share link for a file. Only offered when the server enables global sharing; the HAMAL
+     Docker release and HAMAL Linux both ship with it off. -->
+<div class="lt-overlay" id="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-title" hidden>
+    <div class="lt-sheet">
+        <h2 id="share-title" data-i18n="room.shareTitle">Share outside the room</h2>
+        <p id="modal-file-subtitle"></p>
+        <form id="create-share-form">
+            <input type="hidden" id="modal-file-id" value="">
+            <label for="share-ttl-select" data-i18n="room.shareLifetime">Link lifetime</label>
+            <select id="share-ttl-select" name="ttl_seconds">
+                <option value="900" data-i18n="create.ttl15m">15 minutes</option>
+                <option value="3600" selected data-i18n="room.ttl1h">1 hour</option>
+                <option value="21600" data-i18n="create.ttl6h">6 hours</option>
+                <option value="86400" data-i18n="room.ttl24hShare">24 hours (or until the room ends)</option>
+            </select>
+            <div class="lt-sheet-actions">
+                <button type="button" class="lt-btn lt-btn-quiet" id="close-modal-btn" data-i18n="room.close">Close</button>
+                <button type="submit" class="lt-btn lt-btn-primary" id="generate-share-btn" data-i18n="room.createLink">Create link</button>
+            </div>
+        </form>
+        <div id="share-result-box" hidden>
+            <label for="generated-share-input" data-i18n="room.publicLink">Public link</label>
+            <input type="text" id="generated-share-input" readonly value="">
+            <div class="lt-sheet-actions">
+                <span class="lt-ok" id="copy-share-toast" role="status"></span>
+                <button type="button" class="lt-btn lt-btn-quiet" id="revoke-share-btn" data-i18n="room.revokeLink">Revoke link</button>
+                <button type="button" class="lt-btn lt-btn-primary" id="copy-share-btn" data-i18n="room.copyLink">Copy link</button>
+            </div>
+        </div>
+        <p class="lt-error" id="share-error-box" role="alert" hidden></p>
     </div>
 </div>
 
@@ -251,9 +406,12 @@ Lay files on the table.</h1>
 </div>
 
 <div class="lt-sr" id="live-polite" aria-live="polite"></div>
+<div class="lt-sr" id="live-assertive" aria-live="assertive"></div>
 
 <script src="i18n.js"></script>
 <script src="i18n-lighttable.js"></script>
+<script src="i18n-room.js"></script>
 <script src="main.js"></script>
+<script src="room.js"></script>
 </body>
 </html>

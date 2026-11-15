@@ -27,8 +27,17 @@
 - **QR joining**: Other devices join by scanning the room's QR code or opening its local network address in a browser. They need no app or account.
 - **Temporary rooms**: Choose a room lifespan from 5 minutes to 24 hours. A lamp on the table shows how long the room has left.
 - **Automatic cleanup**: When a room expires or you close it, its files are deleted from this computer by HAMAL's background cleanup, which runs every minute.
-- **Optional PIN**: Protect a room with a PIN of 4 to 8 characters.
+- **Optional PIN**: Protect a room with a PIN of 4 to 8 digits, as the HAMAL server requires.
 - **Native file handling**: Add files with the system file dialog or by dragging them onto the table, and save received files with the system save dialog.
+- **Notes**: Write a note, command or link on the table from the composer (Enter sends, Shift+Enter adds a line), copy or save any note, and send a note that is too long for a note as a `.txt` file.
+- **Paste images**: Ctrl+V lays a copied image on the table as `pasted-image-<time>.<ext>`.
+- **Previews**: Images, video and audio open in a viewer with Previous, Next and Save (arrow keys, S and Esc work too).
+- **Find, filter and sort**: Search the table, filter it by kind (images, video, audio, documents, archives, notes, other) and sort by newest, name or size.
+- **Table and list views**: Switch between the table and a list. Rooms with more than 24 items open in the list.
+- **Save selected**: In the list, select several files and save them to a folder in one go. Names that are taken get a number, so nothing is overwritten.
+- **Upload tray**: Each upload shows its progress and speed, and can be cancelled while it waits or sends, retried when it fails, and removed afterwards.
+- **Room status**: The top bar shows the room's size and file count against its limits, the devices at the table and a room log. The room menu holds Show QR, Copy link, theme, keyboard shortcuts, About and Close room. Press `?` for the shortcut list.
+- **Share links**: The bundled server, like the published Docker image, ships with public share links turned off, so the share button stays hidden. The desktop shows it automatically if a server enables them.
 - **Executable warnings**: Files that could be programs or scripts are marked before you save them.
 - **Limits**: Up to 100 files and 10 GiB per room, set by the bundled HAMAL server.
 - **20 languages**: English, Turkish, Chinese, Hindi, Spanish, French, Arabic, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Marathi, Telugu, Dutch, Italian, Korean and Polish, with right-to-left layout for Arabic and Urdu.
@@ -149,6 +158,10 @@ Before publishing a snap, install it on a real Ubuntu machine and run the checks
 go test -v ./...
 go vet ./...
 node scripts/check-i18n.mjs
+scripts/check-css-parity.sh   # the room CSS is the reference lighttable.css, unchanged
+
+# Parity with the HAMAL Docker reference (a reference server on port 7700)
+HAMAL_REFERENCE_URL=http://127.0.0.1:7700 go test -run TestParityWithReferenceServer -v .
 ```
 
 ### Updates

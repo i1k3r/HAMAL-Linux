@@ -83,9 +83,17 @@ Also start it once from the applications menu and check the HAMAL icon and the n
 | 6 | Click Add files and pick two files from `~/Documents` | The upload tray shows progress and both files appear on the phone |
 | 7 | Drag a file from the file manager onto the table | It uploads and appears on the phone |
 | 8 | Upload a `.sh` file from the phone | It is marked as potentially executable |
-| 9 | Close the room and confirm | The closed screen appears on the desktop and the phone can no longer use the room |
-| 10 | After about a minute, run `ls ~/snap/hamal/current/.local/share/HAMAL/files` | The room's files are gone |
-| 11 | Optional: `sudo snap connect hamal:removable-media`, then save a received file to a USB drive under `/media` | The save succeeds |
+| 9 | Click Write a note, type two lines (Shift+Enter between them), press Enter | The note appears on the table and on the phone with both lines. Copy puts it on the clipboard |
+| 10 | Send a note from the phone | It appears on the desktop table marked Note; the room log notes it |
+| 11 | Copy an image (for example a screenshot) and press Ctrl+V on the table | A file `pasted-image-<time>.png` uploads and appears on the phone |
+| 12 | Click View on a photo, then use the arrow keys, S and Esc | The viewer shows the photo, moves between items, S opens the save dialog, Esc closes |
+| 13 | Type in Find, pick the Images filter, change the sort | The table shows only matching items in the chosen order |
+| 14 | Switch to List, select two files, click Save selected and pick a folder that already holds one of them | Both are saved; the existing file is kept and the new copy gets ` (1)` in its name |
+| 15 | Add a large file (over 500 MB) and click Cancel in the upload tray while it sends | It leaves the tray and never appears on the phone |
+| 16 | Press `?`, then open the ⋯ room menu | The shortcut list appears; the menu shows Show QR, Copy link, theme, Keyboard shortcuts, About and Close room |
+| 17 | Close the room and confirm | The closed screen appears on the desktop and the phone can no longer use the room |
+| 18 | After about a minute, run `ls ~/snap/hamal/current/.local/share/HAMAL/files` | The room's files are gone |
+| 19 | Optional: `sudo snap connect hamal:removable-media`, then save a received file to a USB drive under `/media` | The save succeeds |
 
 The denial log from step 4 must stay empty, apart from known harmless WebKit or GTK lines that you note in the review.
 
